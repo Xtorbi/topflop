@@ -76,8 +76,11 @@ function Vote() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [player]);
 
+  // Styles de fond disponibles: 'bg-fv-navy', 'bg-aurora', 'bg-mesh', 'bg-grid'
+  const bgStyle = 'bg-aurora';
+
   return (
-    <main className="min-h-screen bg-fv-navy px-4 py-4">
+    <main className={`min-h-screen ${bgStyle} px-4 py-4`}>
       <Confetti trigger={celebration.trigger} message={celebration.message} />
       <div className="max-w-sm mx-auto">
         {/* Header discret */}
