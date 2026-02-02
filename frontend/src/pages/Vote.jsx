@@ -6,6 +6,7 @@ import VoteButtons from '../components/VoteButtons';
 import Confetti from '../components/Confetti';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { fetchRandomPlayer, submitVote } from '../utils/api';
+import { CLUB_LOGOS } from '../config/clubs';
 
 const MILESTONES = {
   10: '10 votes !',
@@ -81,7 +82,10 @@ function Vote() {
       <div className="max-w-sm mx-auto">
         {/* Header discret */}
         <div className="flex justify-between items-center mb-4 text-[10px] text-white/40">
-          <span className="uppercase tracking-wider">
+          <span className="uppercase tracking-wider flex items-center gap-1.5">
+            {mode !== 'ligue1' && CLUB_LOGOS[mode] && (
+              <img src={CLUB_LOGOS[mode]} alt={mode} className="w-4 h-4 object-contain" />
+            )}
             {mode === 'ligue1' ? 'Ligue 1' : mode}
           </span>
           <span><AnimatedCounter value={voteCount} /> votes</span>
