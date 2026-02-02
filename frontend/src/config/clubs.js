@@ -33,4 +33,30 @@ CLUBS.forEach(club => {
   CLUB_LOGOS[club.id] = getClubLogo(club.tmId);
 });
 
+// Alias pour les noms complets de la BDD
+const CLUB_ALIASES = {
+  'Paris Saint-Germain': 'psg',
+  'Olympique de Marseille': 'om',
+  'Olympique Lyonnais': 'lyon',
+  'AS Monaco': 'monaco',
+  'LOSC Lille': 'lille',
+  'OGC Nice': 'nice',
+  'RC Lens': 'lens',
+  'Stade Rennais': 'rennes',
+  'Stade Brestois 29': 'brest',
+  'RC Strasbourg Alsace': 'strasbourg',
+  'Toulouse FC': 'toulouse',
+  'FC Nantes': 'nantes',
+  'Le Havre AC': 'lehavre',
+  'AJ Auxerre': 'auxerre',
+  'Angers SCO': 'angers',
+  'FC Lorient': 'lorient',
+  'Paris FC': 'parisfc',
+  'FC Metz': 'metz',
+};
+
+Object.entries(CLUB_ALIASES).forEach(([fullName, id]) => {
+  CLUB_LOGOS[fullName] = CLUB_LOGOS[id];
+});
+
 export default CLUBS;
