@@ -24,10 +24,10 @@ function Vote() {
   const [celebration, setCelebration] = useState({ trigger: 0, message: '' });
   const [exitDirection, setExitDirection] = useState(null); // 'left', 'right', 'down'
   const [voteFlash, setVoteFlash] = useState(null); // 'up', 'down', 'neutral'
+  const [transitioning, setTransitioning] = useState(false); // Transition en cours
   const [error, setError] = useState(null);
 
   const loadPlayer = useCallback(async () => {
-    setPlayer(null); // Reset immédiat pour éviter le blink
     setLoading(true);
     setError(null);
     try {
@@ -46,7 +46,7 @@ function Vote() {
   }, [loadPlayer]);
 
   const handleVote = async (voteType) => {
-    if (!player || exitDirection) return;
+    if (!player || exitDirection || transitioning) return;
 
     // Flash coloré immédiat
     setVoteFlash(voteType);
@@ -75,14 +75,17 @@ function Vote() {
 
       // Attendre la fin de l'animation avant de charger le suivant
       setTimeout(() => {
+        setTransitioning(true);
         setExitDirection(null);
         setVoteFlash(null);
-        loadPlayer();
+        setPlayer(null);
+        loadPlayer().then(() => setTransitioning(false));
       }, 400); // 150ms flash + 250ms exit
     } catch (err) {
       console.error('Erreur vote:', err);
       setExitDirection(null);
       setVoteFlash(null);
+      setTransitioning(false);
     }
   };
 
@@ -115,7 +118,7 @@ function Vote() {
               Réessayer
             </button>
           </div>
-        ) : loading ? (
+        ) : loading || transitioning || !player ? (
           <PlayerCardSkeleton />
         ) : (
           <div className="relative">
@@ -127,7 +130,7 @@ function Vote() {
               voteFlash={voteFlash}
               voteCount={player?.total_votes}
             />
-            <VoteButtons onVote={handleVote} disabled={loading || exitDirection} />
+            <VoteButtons onVote={handleVote} disabled={loading || exitDirection || transitioning} />
 
             {/* Compteur perso */}
             <p className="text-center text-white/40 text-sm mt-4">
