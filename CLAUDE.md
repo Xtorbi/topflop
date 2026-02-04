@@ -398,6 +398,25 @@ Avant deploiement, ajouter des features differenciantes :
 
 ---
 
+## Services externes
+
+| Service | Usage | Coût |
+|---------|-------|------|
+| **Vercel** | Hébergement frontend | Gratuit |
+| **Render** | Hébergement backend + BDD | Gratuit |
+| **GitHub** | Code source | Gratuit |
+| **Football-Data.org** | API matchs L1 (cron) | Gratuit (10 req/min) |
+| **cron-job.org** | Planification cron weekend | Gratuit |
+| **flagcdn.com** | Drapeaux nationalités | Gratuit (CDN public) |
+
+**APIs testées mais abandonnées :**
+- SofaScore : bloqué (Cloudflare 403)
+- Transfermarkt : utilisé pour import initial uniquement (scraping)
+
+**Coût total : 0€/mois**
+
+---
+
 ## Architecture technique
 
 ```
