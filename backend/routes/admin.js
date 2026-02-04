@@ -1,36 +1,82 @@
 const express = require('express');
 const router = express.Router();
-const { queryAll, runSql } = require('../models/database');
-const { CURRENT_SEASON, L1_CLUBS } = require('../config/clubs');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const { runSql } = require('../models/database');
+const { CURRENT_SEASON } = require('../config/clubs');
 
 // Clé secrète pour protéger la route (à définir dans les variables d'env)
 const ADMIN_KEY = process.env.ADMIN_KEY || 'footvibes-admin-2026';
 
-// Mapping des IDs SofaScore pour les clubs L1
-const SOFASCORE_TEAM_IDS = {
-  'Paris Saint-Germain': 2190,
-  'Olympique de Marseille': 2673,
-  'Olympique Lyonnais': 2685,
-  'AS Monaco': 2686,
-  'LOSC Lille': 2780,
-  'OGC Nice': 2730,
-  'RC Lens': 2807,
-  'Stade Rennais': 2705,
-  'Stade Brestois 29': 2956,
-  'RC Strasbourg Alsace': 2682,
-  'Toulouse FC': 2711,
-  'FC Nantes': 2728,
-  'Le Havre AC': 2751,
-  'AJ Auxerre': 2688,
-  'Angers SCO': 2749,
-  'FC Lorient': 2781,
-  'Paris FC': 2783,
-  'FC Metz': 2690,
+// Mapping SofaScore -> nom en BDD (plus robuste)
+const SOFASCORE_TO_DB = {
+  'Paris Saint-Germain': 'Paris Saint-Germain',
+  'PSG': 'Paris Saint-Germain',
+  'Marseille': 'Olympique de Marseille',
+  'Olympique Marseille': 'Olympique de Marseille',
+  'Lyon': 'Olympique Lyonnais',
+  'Olympique Lyon': 'Olympique Lyonnais',
+  'Olympique Lyonnais': 'Olympique Lyonnais',
+  'Monaco': 'AS Monaco',
+  'AS Monaco': 'AS Monaco',
+  'Lille': 'LOSC Lille',
+  'LOSC': 'LOSC Lille',
+  'LOSC Lille': 'LOSC Lille',
+  'Nice': 'OGC Nice',
+  'OGC Nice': 'OGC Nice',
+  'Lens': 'RC Lens',
+  'RC Lens': 'RC Lens',
+  'Rennes': 'Stade Rennais',
+  'Stade Rennais': 'Stade Rennais',
+  'Brest': 'Stade Brestois 29',
+  'Stade Brestois': 'Stade Brestois 29',
+  'Strasbourg': 'RC Strasbourg Alsace',
+  'RC Strasbourg': 'RC Strasbourg Alsace',
+  'Toulouse': 'Toulouse FC',
+  'Toulouse FC': 'Toulouse FC',
+  'Nantes': 'FC Nantes',
+  'FC Nantes': 'FC Nantes',
+  'Le Havre': 'Le Havre AC',
+  'Le Havre AC': 'Le Havre AC',
+  'Auxerre': 'AJ Auxerre',
+  'AJ Auxerre': 'AJ Auxerre',
+  'Angers': 'Angers SCO',
+  'Angers SCO': 'Angers SCO',
+  'Lorient': 'FC Lorient',
+  'FC Lorient': 'FC Lorient',
+  'Paris FC': 'Paris FC',
+  'Metz': 'FC Metz',
+  'FC Metz': 'FC Metz',
 };
 
 // ID de la Ligue 1 sur SofaScore (saison 2025-2026)
 const SOFASCORE_TOURNAMENT_ID = 34;
 const SOFASCORE_SEASON_ID = 77356;
+
+// Trouver le nom du club en BDD depuis le nom SofaScore
+function findClubName(sofascoreName) {
+  if (!sofascoreName) return null;
+
+  // Essai direct
+  if (SOFASCORE_TO_DB[sofascoreName]) {
+    return SOFASCORE_TO_DB[sofascoreName];
+  }
+
+  // Essai partiel (premier mot)
+  const firstWord = sofascoreName.split(' ')[0];
+  if (SOFASCORE_TO_DB[firstWord]) {
+    return SOFASCORE_TO_DB[firstWord];
+  }
+
+  // Recherche dans les clés
+  for (const [key, value] of Object.entries(SOFASCORE_TO_DB)) {
+    if (sofascoreName.toLowerCase().includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(sofascoreName.toLowerCase())) {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Route pour mettre à jour les dates de match des joueurs
@@ -44,55 +90,70 @@ router.get('/update-matches', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const now = new Date();
+  const logs = [];
+
   try {
-    // Récupérer les matchs des dernières 24h
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    logs.push(`Starting update at ${now.toISOString()}`);
+
+    // Récupérer les matchs des dernières 48h (pour couvrir le weekend)
+    const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
     // Appel API SofaScore pour les événements récents
-    const response = await fetch(
-      `https://api.sofascore.com/api/v1/unique-tournament/${SOFASCORE_TOURNAMENT_ID}/season/${SOFASCORE_SEASON_ID}/events/last/0`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      }
-    );
+    const url = `https://api.sofascore.com/api/v1/unique-tournament/${SOFASCORE_TOURNAMENT_ID}/season/${SOFASCORE_SEASON_ID}/events/last/0`;
+    logs.push(`Fetching: ${url}`);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+    });
+
+    logs.push(`Response status: ${response.status}`);
 
     if (!response.ok) {
+      const text = await response.text();
+      logs.push(`Error body: ${text.substring(0, 200)}`);
       throw new Error(`SofaScore API error: ${response.status}`);
     }
 
     const data = await response.json();
     const events = data.events || [];
+    logs.push(`Events found: ${events.length}`);
 
-    // Filtrer les matchs terminés des dernières 24h
+    // Filtrer les matchs terminés des dernières 48h
     const recentMatches = events.filter(event => {
       const matchTime = new Date(event.startTimestamp * 1000);
-      return event.status?.type === 'finished' && matchTime >= yesterday;
+      const isFinished = event.status?.type === 'finished';
+      const isRecent = matchTime >= cutoff;
+      return isFinished && isRecent;
     });
 
+    logs.push(`Recent finished matches: ${recentMatches.length}`);
+
     const updatedClubs = [];
+    const unmatchedTeams = [];
 
     for (const match of recentMatches) {
       const homeTeam = match.homeTeam?.name;
       const awayTeam = match.awayTeam?.name;
       const matchDate = new Date(match.startTimestamp * 1000).toISOString();
 
+      logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate}`);
+
       // Mettre à jour les joueurs des deux équipes
       for (const teamName of [homeTeam, awayTeam]) {
-        // Trouver le nom du club dans notre BDD
-        const clubName = Object.keys(SOFASCORE_TEAM_IDS).find(name =>
-          teamName?.toLowerCase().includes(name.toLowerCase().split(' ')[0]) ||
-          name.toLowerCase().includes(teamName?.toLowerCase().split(' ')[0] || '')
-        );
+        const clubName = findClubName(teamName);
 
         if (clubName) {
           runSql(
             `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
             [matchDate, clubName, CURRENT_SEASON]
           );
-          updatedClubs.push({ club: clubName, matchDate });
+          updatedClubs.push({ club: clubName, matchDate, sofascoreName: teamName });
+        } else if (teamName) {
+          unmatchedTeams.push(teamName);
         }
       }
     }
@@ -101,11 +162,18 @@ router.get('/update-matches', async (req, res) => {
       success: true,
       matchesFound: recentMatches.length,
       updatedClubs,
+      unmatchedTeams: [...new Set(unmatchedTeams)],
       timestamp: now.toISOString(),
+      logs,
     });
   } catch (error) {
     console.error('Error updating matches:', error);
-    res.status(500).json({ error: error.message });
+    logs.push(`Error: ${error.message}`);
+    res.status(500).json({
+      error: error.message,
+      logs,
+      timestamp: now.toISOString(),
+    });
   }
 });
 
