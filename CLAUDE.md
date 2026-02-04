@@ -16,6 +16,35 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/foot-vibes
 
+### Session du 4 fevrier 2026 (nuit) - Algo + Cron matchs
+
+**Algorithme selection joueur ameliore (playersController.js)** :
+- Favorise les joueurs connus (stars des grands clubs)
+- Bonus club (0-50) : PSG=50, OM=40, Lyon=30...
+- Bonus titulaire (0-30) : plus de matchs = plus visible
+- Bonus stats (0-20) : buts + passes decisives
+- Bonus fraicheur match (0-100) : boost si match recent
+  - < 6h : +100 (le match vient de finir !)
+  - < 24h : +60
+  - < 48h : +30
+  - < 72h : +15
+- Penalite votes reduite (etait trop forte, favorisait les inconnus)
+
+**Cron job mise a jour matchs** :
+- Route `/api/admin/update-matches?key=footvibes-admin-2026`
+- API : Football-Data.org (gratuit, 10 req/min)
+- Met a jour `last_match_date` des joueurs apres chaque match
+- Cron configure sur cron-job.org : `0 19,23 * * 5,6,0`
+  - Vendredi, samedi, dimanche a 19h et 23h
+
+**Fichiers crees/modifies** :
+- `backend/routes/admin.js` : nouvelle route admin
+- `backend/server.js` : ajout route admin
+- `backend/controllers/playersController.js` : algo mis a jour
+- `backend/package.json` : ajout node-fetch
+
+---
+
 ### Session du 4 fevrier 2026 (nuit) - Polish carte joueur
 
 **Effet tilt carte (PlayerCard.jsx)** :
@@ -294,6 +323,13 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 
 ## Ce qui reste a faire
 
+### Avant Go Live (securite)
+
+- [ ] **Deplacer la cle API Football-Data.org en variable d'environnement**
+  - Actuellement en dur dans `backend/routes/admin.js`
+  - Sur Render : Settings > Environment > ajouter `FOOTBALL_DATA_API_KEY`
+  - Supprimer la valeur par defaut du code
+
 ### Priorite haute (pour lancer le MVP)
 
 - [x] **Verifier les donnees en BDD** : 481 joueurs importes (2 fev 2026)
@@ -416,22 +452,32 @@ Billboard/
 | GET | /api/contexts | Liste des modes (L1 + 18 clubs) |
 | POST | /api/vote | Enregistrer un vote |
 | GET | /api/health | Health check |
+| GET | /api/admin/update-matches | Met a jour last_match_date (cron, cle requise) |
+| GET | /api/admin/health | Health check admin |
 
 ---
 
 ## Algorithme de selection joueur
 
-L'algo de selection du joueur suivant utilise 2 criteres :
+L'algo de selection du joueur suivant utilise 2 etapes :
 
-1. **Recence de la derniere journee jouee** (80/15/4/1%) :
-   - 80% : Joueurs ayant joue la journee actuelle
-   - 15% : J-1
-   - 4% : J-2
-   - 1% : Plus ancien
+**Etape 1 : Selection bucket par recence journee** (80/15/4/1%) :
+- 80% : Joueurs ayant joue la journee actuelle
+- 15% : J-1
+- 4% : J-2
+- 1% : Plus ancien
 
-2. **Ponderation dans le bucket** :
-   - Penalite votes (favorise joueurs peu votes)
-   - Bonus club populaire (PSG/OM en premier pour les nouveaux users)
+**Etape 2 : Ponderation dans le bucket** (favorise les stars) :
+- Base : 50 points
+- Bonus fraicheur match : +100 si < 6h, +60 si < 24h, +30 si < 48h, +15 si < 72h
+- Bonus club : +50 (PSG) a +5 (petits clubs)
+- Bonus titulaire : +1.5 par match joue (max +30)
+- Bonus stats : +2 par but/passe (max +20)
+- Penalite votes : -3×log(votes) (max -15)
+
+**Exemple** :
+- Greenwood (OM, 21 buts, 20 matchs, match hier) : 50 + 60 + 40 + 30 + 20 - 5 = **195 pts**
+- Remplacant inconnu (Auxerre, 0 stats, pas de match recent) : 50 + 0 + 5 + 3 + 0 - 2 = **56 pts**
 
 ---
 
