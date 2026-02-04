@@ -4,73 +4,59 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 const { runSql } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
 
-// Clé secrète pour protéger la route (à définir dans les variables d'env)
+// Clés secrètes
 const ADMIN_KEY = process.env.ADMIN_KEY || 'footvibes-admin-2026';
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || 'c3778e56a9194c8cb10b0ed617c86492';
 
-// Mapping SofaScore -> nom en BDD (plus robuste)
-const SOFASCORE_TO_DB = {
-  'Paris Saint-Germain': 'Paris Saint-Germain',
-  'PSG': 'Paris Saint-Germain',
-  'Marseille': 'Olympique de Marseille',
-  'Olympique Marseille': 'Olympique de Marseille',
-  'Lyon': 'Olympique Lyonnais',
-  'Olympique Lyon': 'Olympique Lyonnais',
+// Mapping Football-Data.org -> nom en BDD
+const FOOTBALLDATA_TO_DB = {
+  'Paris Saint-Germain FC': 'Paris Saint-Germain',
+  'Olympique de Marseille': 'Olympique de Marseille',
   'Olympique Lyonnais': 'Olympique Lyonnais',
-  'Monaco': 'AS Monaco',
-  'AS Monaco': 'AS Monaco',
-  'Lille': 'LOSC Lille',
-  'LOSC': 'LOSC Lille',
-  'LOSC Lille': 'LOSC Lille',
-  'Nice': 'OGC Nice',
+  'AS Monaco FC': 'AS Monaco',
+  'Lille OSC': 'LOSC Lille',
   'OGC Nice': 'OGC Nice',
-  'Lens': 'RC Lens',
   'RC Lens': 'RC Lens',
-  'Rennes': 'Stade Rennais',
-  'Stade Rennais': 'Stade Rennais',
-  'Brest': 'Stade Brestois 29',
-  'Stade Brestois': 'Stade Brestois 29',
-  'Strasbourg': 'RC Strasbourg Alsace',
-  'RC Strasbourg': 'RC Strasbourg Alsace',
-  'Toulouse': 'Toulouse FC',
+  'Stade Rennais FC 1901': 'Stade Rennais',
+  'Stade Brestois 29': 'Stade Brestois 29',
+  'RC Strasbourg Alsace': 'RC Strasbourg Alsace',
   'Toulouse FC': 'Toulouse FC',
-  'Nantes': 'FC Nantes',
   'FC Nantes': 'FC Nantes',
-  'Le Havre': 'Le Havre AC',
   'Le Havre AC': 'Le Havre AC',
-  'Auxerre': 'AJ Auxerre',
   'AJ Auxerre': 'AJ Auxerre',
-  'Angers': 'Angers SCO',
   'Angers SCO': 'Angers SCO',
-  'Lorient': 'FC Lorient',
   'FC Lorient': 'FC Lorient',
   'Paris FC': 'Paris FC',
-  'Metz': 'FC Metz',
   'FC Metz': 'FC Metz',
+  // Variantes possibles
+  'Paris SG': 'Paris Saint-Germain',
+  'Monaco': 'AS Monaco',
+  'Lille': 'LOSC Lille',
+  'Marseille': 'Olympique de Marseille',
+  'Lyon': 'Olympique Lyonnais',
+  'Rennes': 'Stade Rennais',
+  'Brest': 'Stade Brestois 29',
+  'Strasbourg': 'RC Strasbourg Alsace',
+  'Nantes': 'FC Nantes',
+  'Auxerre': 'AJ Auxerre',
+  'Angers': 'Angers SCO',
+  'Lorient': 'FC Lorient',
+  'Metz': 'FC Metz',
 };
 
-// ID de la Ligue 1 sur SofaScore (saison 2025-2026)
-const SOFASCORE_TOURNAMENT_ID = 34;
-const SOFASCORE_SEASON_ID = 77356;
-
-// Trouver le nom du club en BDD depuis le nom SofaScore
-function findClubName(sofascoreName) {
-  if (!sofascoreName) return null;
+// Trouver le nom du club en BDD
+function findClubName(apiName) {
+  if (!apiName) return null;
 
   // Essai direct
-  if (SOFASCORE_TO_DB[sofascoreName]) {
-    return SOFASCORE_TO_DB[sofascoreName];
+  if (FOOTBALLDATA_TO_DB[apiName]) {
+    return FOOTBALLDATA_TO_DB[apiName];
   }
 
-  // Essai partiel (premier mot)
-  const firstWord = sofascoreName.split(' ')[0];
-  if (SOFASCORE_TO_DB[firstWord]) {
-    return SOFASCORE_TO_DB[firstWord];
-  }
-
-  // Recherche dans les clés
-  for (const [key, value] of Object.entries(SOFASCORE_TO_DB)) {
-    if (sofascoreName.toLowerCase().includes(key.toLowerCase()) ||
-        key.toLowerCase().includes(sofascoreName.toLowerCase())) {
+  // Recherche partielle
+  for (const [key, value] of Object.entries(FOOTBALLDATA_TO_DB)) {
+    if (apiName.toLowerCase().includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(apiName.toLowerCase())) {
       return value;
     }
   }
@@ -80,12 +66,12 @@ function findClubName(sofascoreName) {
 
 /**
  * Route pour mettre à jour les dates de match des joueurs
- * Appelle l'API SofaScore pour récupérer les matchs récents
+ * Utilise Football-Data.org API (gratuit)
  */
 router.get('/update-matches', async (req, res) => {
   const { key } = req.query;
 
-  // Vérification de la clé
+  // Vérification de la clé admin
   if (key !== ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -96,17 +82,18 @@ router.get('/update-matches', async (req, res) => {
   try {
     logs.push(`Starting update at ${now.toISOString()}`);
 
-    // Récupérer les matchs des dernières 48h (pour couvrir le weekend)
-    const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    // Récupérer les matchs des 3 derniers jours
+    const dateFrom = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    const dateFromStr = dateFrom.toISOString().split('T')[0];
+    const dateToStr = now.toISOString().split('T')[0];
 
-    // Appel API SofaScore pour les événements récents
-    const url = `https://api.sofascore.com/api/v1/unique-tournament/${SOFASCORE_TOURNAMENT_ID}/season/${SOFASCORE_SEASON_ID}/events/last/0`;
+    // Appel API Football-Data.org - Ligue 1 (FL1)
+    const url = `https://api.football-data.org/v4/competitions/FL1/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}&status=FINISHED`;
     logs.push(`Fetching: ${url}`);
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
+        'X-Auth-Token': FOOTBALL_DATA_API_KEY,
       },
     });
 
@@ -114,31 +101,21 @@ router.get('/update-matches', async (req, res) => {
 
     if (!response.ok) {
       const text = await response.text();
-      logs.push(`Error body: ${text.substring(0, 200)}`);
-      throw new Error(`SofaScore API error: ${response.status}`);
+      logs.push(`Error body: ${text.substring(0, 500)}`);
+      throw new Error(`Football-Data API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const events = data.events || [];
-    logs.push(`Events found: ${events.length}`);
-
-    // Filtrer les matchs terminés des dernières 48h
-    const recentMatches = events.filter(event => {
-      const matchTime = new Date(event.startTimestamp * 1000);
-      const isFinished = event.status?.type === 'finished';
-      const isRecent = matchTime >= cutoff;
-      return isFinished && isRecent;
-    });
-
-    logs.push(`Recent finished matches: ${recentMatches.length}`);
+    const matches = data.matches || [];
+    logs.push(`Matches found: ${matches.length}`);
 
     const updatedClubs = [];
     const unmatchedTeams = [];
 
-    for (const match of recentMatches) {
+    for (const match of matches) {
       const homeTeam = match.homeTeam?.name;
       const awayTeam = match.awayTeam?.name;
-      const matchDate = new Date(match.startTimestamp * 1000).toISOString();
+      const matchDate = match.utcDate; // ISO format
 
       logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate}`);
 
@@ -151,7 +128,7 @@ router.get('/update-matches', async (req, res) => {
             `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
             [matchDate, clubName, CURRENT_SEASON]
           );
-          updatedClubs.push({ club: clubName, matchDate, sofascoreName: teamName });
+          updatedClubs.push({ club: clubName, matchDate, apiName: teamName });
         } else if (teamName) {
           unmatchedTeams.push(teamName);
         }
@@ -160,7 +137,7 @@ router.get('/update-matches', async (req, res) => {
 
     res.json({
       success: true,
-      matchesFound: recentMatches.length,
+      matchesFound: matches.length,
       updatedClubs,
       unmatchedTeams: [...new Set(unmatchedTeams)],
       timestamp: now.toISOString(),
