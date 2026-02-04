@@ -92,7 +92,7 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
 
         {/* Header : position à gauche, votes à droite */}
         <div className="flex justify-between items-center px-3 pt-3 pb-1">
-          <span className="text-white/50 text-xs tracking-wider">
+          <span className="text-white/50 text-xs">
             {POSITIONS[player.position] || player.position}
           </span>
           {voteCount !== null && (
@@ -116,9 +116,9 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
 
           {/* Nom */}
           {firstName && (
-            <p className="text-white/70 text-sm tracking-wide capitalize">{firstName.toLowerCase()}</p>
+            <p className="text-white/50 text-xs capitalize">{firstName.toLowerCase()}</p>
           )}
-          <h2 className="text-white text-2xl font-extrabold tracking-wide uppercase">
+          <h2 className="text-white text-2xl font-bold uppercase">
             {lastName}
           </h2>
         </div>
@@ -128,25 +128,25 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
           {clubLogo && (
             <img src={clubLogo} alt={player.club} className="w-4 h-4 object-contain" />
           )}
-          <p className="text-white/50 text-xs tracking-wide">{formatClubName(player.club)}</p>
+          <p className="text-white/50 text-xs">{formatClubName(player.club)}</p>
         </div>
 
         {/* Stats tableau 2 colonnes */}
         <div className="grid grid-cols-2 border-t border-fv-navy">
           <div className="flex justify-between items-center px-4 py-2 border-r border-b border-fv-navy">
-            <span className="text-white/70 text-sm">Matchs</span>
+            <span className="text-white/50 text-xs">Matchs</span>
             <span className="text-white font-bold text-lg">{player.matches_played || '-'}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2 border-b border-fv-navy">
-            <span className="text-white/70 text-sm">{isGoalkeeper ? 'C. sheets' : 'Buts'}</span>
+            <span className="text-white/50 text-xs">{isGoalkeeper ? 'C. sheets' : 'Buts'}</span>
             <span className="text-white font-bold text-lg">{isGoalkeeper ? (player.clean_sheets || '-') : (player.goals || '-')}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2 border-r border-fv-navy">
-            <span className="text-white/70 text-sm">Âge</span>
+            <span className="text-white/50 text-xs">Âge</span>
             <span className="text-white font-bold text-lg">{player.age || '-'}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2">
-            <span className="text-white/70 text-sm">{isGoalkeeper ? 'Arrêts' : 'Passes'}</span>
+            <span className="text-white/50 text-xs">{isGoalkeeper ? 'Arrêts' : 'Passes'}</span>
             <span className="text-white font-bold text-lg">{isGoalkeeper ? (player.saves || '-') : (player.assists || '-')}</span>
           </div>
         </div>

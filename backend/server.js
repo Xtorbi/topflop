@@ -5,6 +5,7 @@ require('dotenv').config({ path: '../.env' });
 const { initDb } = require('./models/database');
 const playersRoutes = require('./routes/players');
 const votesRoutes = require('./routes/votes');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use('/api', playersRoutes);
 app.use('/api', votesRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

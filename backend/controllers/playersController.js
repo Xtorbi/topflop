@@ -63,12 +63,37 @@ function getRandomPlayer(req, res) {
     if (bucket.length === 0) bucket = allPlayers;
   }
 
-  // Sélection aléatoire pondérée dans le bucket (garder pondération votes/club)
+  // Sélection aléatoire pondérée dans le bucket
+  // Favorise : joueurs du dernier match, grands clubs, titulaires, performants
+  const now = Date.now();
+
   const weights = bucket.map(p => {
-    const baseWeight = 100;
-    const votePenalty = Math.log(p.total_votes + 1) * 10;
-    const clubBonus = CLUB_POPULARITY[p.club] || 10;
-    return Math.max(1, baseWeight - votePenalty + clubBonus * 0.5);
+    const baseWeight = 50;
+
+    // Bonus fraîcheur match (0-100) : boost énorme si match récent
+    let freshnessBonus = 0;
+    if (p.last_match_date) {
+      const matchTime = new Date(p.last_match_date).getTime();
+      const hoursAgo = (now - matchTime) / (1000 * 60 * 60);
+      if (hoursAgo < 6) freshnessBonus = 100;        // Match vient de finir !
+      else if (hoursAgo < 24) freshnessBonus = 60;   // Hier soir
+      else if (hoursAgo < 48) freshnessBonus = 30;   // Avant-hier
+      else if (hoursAgo < 72) freshnessBonus = 15;   // Dans les 3 jours
+    }
+
+    // Bonus club (0-50) : PSG=50, OM=40, Lyon=30...
+    const clubBonus = (CLUB_POPULARITY[p.club] || 10) * 0.5;
+
+    // Bonus titulaire (0-30) : plus de matchs = plus visible
+    const matchesBonus = Math.min(30, (p.matches_played || 0) * 1.5);
+
+    // Bonus stats (0-20) : buts + passes décisives
+    const statsBonus = Math.min(20, ((p.goals || 0) + (p.assists || 0)) * 2);
+
+    // Légère pénalité si déjà beaucoup voté (pour varier, mais réduite)
+    const votePenalty = Math.min(15, Math.log(p.total_votes + 1) * 3);
+
+    return Math.max(1, baseWeight + freshnessBonus + clubBonus + matchesBonus + statsBonus - votePenalty);
   });
 
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);

@@ -35,13 +35,13 @@ function VoteButtons({ onVote, disabled }) {
       <button
         onClick={() => handleClick('neutral')}
         disabled={disabled}
-        className={`w-12 h-12 sm:w-11 sm:h-11 ${baseClasses}
-                   bg-white/5 border-2 border-white/10
-                   hover:bg-white/10 hover:border-white/30
+        className={`w-16 h-16 sm:w-14 sm:h-14 ${baseClasses}
+                   bg-white/10 border-2 border-white/20 text-white/60
+                   hover:bg-white/15 hover:border-white/30 hover:text-white
                    ${clickedButton === 'neutral' ? 'animate-vote-bounce' : ''}`}
         aria-label="Je ne sais pas"
       >
-        <span className="text-2xl sm:text-xl opacity-70 saturate-50 hover:opacity-100 hover:saturate-100 transition-all">🤔</span>
+        <span className="text-2xl sm:text-xl font-black">?</span>
       </button>
 
       {/* Upvote - Pouce haut */}
