@@ -16,6 +16,38 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/foot-vibes
 
+### Session du 5 fevrier 2026 - Swipe mobile + Fix double-clic
+
+**Swipe mobile implemente (Vote.jsx)** :
+- Touch events natifs (`touchstart` / `touchmove` / `touchend`), zero dependance externe
+- Swipe droite = upvote, swipe gauche = downvote, swipe bas = neutre
+- Seuils : 80px horizontal, 60px vertical, direction dominante gagne
+- Swipe vers le haut ignore (pas d'action associee)
+- Carte suit le doigt en temps reel (`transform: translate + rotate`)
+- Snap back fluide (transition 0.3s) si swipe sous le seuil
+- Classe `touch-none` sur le wrapper pour empecher le scroll parasite
+- Carte suivante visible en transparence pendant le drag
+
+**Indicateur visuel de direction pendant le drag** :
+- Drag droite : ombre interne verte (rgba 16,185,129)
+- Drag gauche : ombre interne rouge (rgba 239,68,68)
+- Drag bas : ombre interne blanche
+- Opacite proportionnelle a la distance (0 au centre, max au seuil)
+
+**Fix double-clic desktop** :
+- Bug : `handleVote` lisait `exitDirection` depuis une closure stale (pas re-rendu)
+- Fix : remplacement du guard `exitDirection` par `isVotingRef` (ref toujours a jour)
+- `isVotingRef.current = true` au debut du vote, `false` apres le timeout 250ms ou en cas d'erreur
+
+**Hint mobile** :
+- "Swipe la carte pour voter" affiche uniquement sur mobile (`sm:hidden`)
+- Hint clavier desktop inchange (`hidden sm:block`)
+
+**Fichiers modifies** :
+- `frontend/src/pages/Vote.jsx` : swipe tactile, indicateur visuel, fix double-clic, hint mobile
+
+---
+
 ### Session du 5 fevrier 2026 - Logo + Branding
 
 **Logo FOOTVIBES integre** :
@@ -436,7 +468,7 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 
 ### Priorite basse (post-MVP v1.2+)
 
-- [ ] Swipe mobile (gauche/droite style Tinder)
+- [x] Swipe mobile (gauche/droite style Tinder) - touch events natifs, indicateur visuel
 - [ ] Partage reseaux sociaux (Twitter/X, Instagram story)
 - [x] Classements tendances (7 derniers jours, movers) - filtres periode implementes
 - [ ] Legendes historiques (anciens joueurs L1)
