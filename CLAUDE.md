@@ -68,6 +68,8 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 
 **Teste en local** : Vote sur Nuno Mendes → unique_voters passe de 0 a 1, IP enregistree OK
 
+**Deploye en prod** : Backend Render + Frontend Vercel auto-deployes depuis master
+
 **Fichiers modifies** :
 - `backend/models/database.js` : migration colonne voter_ip + index
 - `backend/controllers/votesController.js` : stockage IP votant
