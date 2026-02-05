@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import RankingTable from '../components/RankingTable';
 import { fetchRanking } from '../utils/api';
-import { CLUB_NAMES } from '../config/clubs';
+import { CLUB_NAMES, getClubDisplayName } from '../config/clubs';
 
 const PERIODS = [
   { id: 'week', label: '7 jours' },
@@ -12,6 +12,7 @@ const PERIODS = [
 function Ranking() {
   const [players, setPlayers] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalUniqueVoters, setTotalUniqueVoters] = useState(0);
   const [clubFilter, setClubFilter] = useState('');
   const [positionFilter, setPositionFilter] = useState('Tous');
   const [periodFilter, setPeriodFilter] = useState('season');
@@ -32,6 +33,7 @@ function Ranking() {
         });
         setPlayers(data.players);
         setTotal(data.total);
+        setTotalUniqueVoters(data.total_unique_voters || 0);
       } catch (err) {
         console.error('Erreur classement:', err);
       } finally {
@@ -50,15 +52,21 @@ function Ranking() {
         <select
           value={clubFilter}
           onChange={(e) => setClubFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
-                     bg-fv-navy border border-white/10 text-white
+          className="pl-3 pr-8 py-2 w-[145px] rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
+                     bg-fv-navy border border-white/10 text-white appearance-none truncate
                      focus:outline-none focus:border-fv-green/50
                      [&>option]:bg-fv-navy [&>option]:text-white"
-          style={{ colorScheme: 'dark' }}
+          style={{
+            colorScheme: 'dark',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 0.4rem center',
+            backgroundSize: '1rem'
+          }}
         >
           <option value="">Tous les clubs</option>
           {CLUB_NAMES.map((name) => (
-            <option key={name} value={name}>{name}</option>
+            <option key={name} value={name}>{getClubDisplayName(name)}</option>
           ))}
         </select>
 
@@ -66,11 +74,17 @@ function Ranking() {
         <select
           value={positionFilter}
           onChange={(e) => setPositionFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
-                     bg-fv-navy border border-white/10 text-white
+          className="pl-3 pr-8 py-2 w-[145px] rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
+                     bg-fv-navy border border-white/10 text-white appearance-none truncate
                      focus:outline-none focus:border-fv-green/50
                      [&>option]:bg-fv-navy [&>option]:text-white"
-          style={{ colorScheme: 'dark' }}
+          style={{
+            colorScheme: 'dark',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 0.4rem center',
+            backgroundSize: '1rem'
+          }}
         >
           <option value="Tous">Tous les postes</option>
           <option value="Gardien">Gardien</option>
@@ -81,7 +95,7 @@ function Ranking() {
 
         {/* Toggle Français - iOS style */}
         <label className="flex items-center gap-2 cursor-pointer select-none ml-auto">
-          <span className="text-sm text-white/60">🇫🇷 Français uniquement</span>
+          <span className="text-sm text-white/60">Joueurs FR</span>
           <div
             onClick={() => setFrenchOnly(!frenchOnly)}
             className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
@@ -127,19 +141,19 @@ function Ranking() {
         style={{ animationDelay: '100ms' }}
       />
 
+      {/* Stats globales */}
+      {!loading && total > 0 && (
+        <p className="mb-4 text-sm text-white/50 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+          {total} joueurs classés · {totalUniqueVoters} votant{totalUniqueVoters > 1 ? 's' : ''} unique{totalUniqueVoters > 1 ? 's' : ''}
+        </p>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/10 border-t-fv-green" />
         </div>
       ) : (
-        <>
-          <RankingTable players={players} />
-          {total > 0 && (
-            <p className="text-center text-white/40 mt-4 text-sm animate-fade-in-up">
-              {players.length} / {total} joueurs
-            </p>
-          )}
-        </>
+        <RankingTable players={players} />
       )}
       </div>
     </main>

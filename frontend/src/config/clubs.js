@@ -61,4 +61,12 @@ Object.entries(CLUB_ALIASES).forEach(([fullName, id]) => {
 
 export const CLUB_NAMES = Object.keys(CLUB_ALIASES);
 
+// Noms d'affichage raccourcis pour le dropdown
+export const CLUB_DISPLAY_NAMES = {
+  'RC Strasbourg Alsace': 'RC Strasbourg',
+  'Stade Brestois 29': 'Stade Brestois',
+};
+
+export const getClubDisplayName = (name) => CLUB_DISPLAY_NAMES[name] || name;
+
 export default CLUBS;
