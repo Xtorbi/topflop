@@ -37,7 +37,7 @@ const formatClubName = (name) => {
   }).join(' ');
 };
 
-function PlayerCard({ player, animate = false, exitDirection = null, voteFlash = null, voteCount = null }) {
+function PlayerCard({ player, animate = false, exitDirection = null, voteCount = null }) {
   const cardRef = useRef(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
@@ -49,20 +49,6 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
     if (exitDirection === 'right') return 'animate-exit-right';
     if (exitDirection === 'down') return 'animate-exit-down';
     return '';
-  };
-
-  const getFlashOverlay = () => {
-    if (!voteFlash) return null;
-    const colors = {
-      up: 'bg-emerald-500/30',
-      down: 'bg-red-500/30',
-      neutral: 'bg-white/20',
-    };
-    return (
-      <div
-        className={`absolute inset-0 ${colors[voteFlash]} rounded-2xl animate-vote-flash pointer-events-none z-20`}
-      />
-    );
   };
 
   const isGoalkeeper = player.position === 'Gardien';
@@ -84,7 +70,9 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
   };
 
   return (
-    <div className={`w-full max-w-[300px] mx-auto ${getExitClass()}`}>
+    <div
+      className={`w-full max-w-[300px] mx-auto ${getExitClass()}`}
+    >
       {/* Card principale avec effet 3D */}
       <div
         ref={cardRef}
@@ -97,9 +85,6 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
           transformStyle: 'preserve-3d',
         }}
       >
-        {/* Flash overlay */}
-        {getFlashOverlay()}
-
         {/* Header : position à gauche, votes à droite */}
         <div className="flex justify-between items-center px-3 pt-3 pb-1">
           <span className="text-white/50 text-xs">
@@ -107,7 +92,7 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteFlash =
           </span>
           {voteCount !== null && (
             <span className="text-white/50 text-xs">
-              {voteCount} votes reçus
+              {voteCount} {voteCount <= 1 ? 'vote reçu' : 'votes reçus'}
             </span>
           )}
         </div>

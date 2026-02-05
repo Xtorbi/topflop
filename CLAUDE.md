@@ -1,6 +1,6 @@
 # CLAUDE.md - Foot Vibes
 
-**Derniere mise a jour** : 4 fevrier 2026
+**Derniere mise a jour** : 5 fevrier 2026
 
 ---
 
@@ -15,6 +15,69 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 - **Frontend** : https://frontend-xtorbis-projects.vercel.app
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/foot-vibes
+
+### Session du 5 fevrier 2026 - Logo + Branding
+
+**Logo FOOTVIBES integre** :
+- Logo genere via Ideogram.ai (typo grasse, ballon + ondes, couleur brand #10B981)
+- JPEG converti en PNG transparent via Python/Pillow (suppression fond navy)
+- PNG recadre automatiquement (suppression marges transparentes)
+- Fichier final : `frontend/public/logo.png` (906x291)
+
+**Integration logo dans le code** :
+- Home hero : `<img>` avec `w-72 sm:w-96 md:w-[500px]` (remplace les spans texte)
+- Home sticky header : `<img>` avec `h-8` (apparait au scroll > 80px)
+- Header global : `<img>` avec `h-8 sm:h-10` (pages Vote et Classement)
+- `.logo-glow` : passe de `text-shadow` a `filter: drop-shadow()` (compatible img)
+
+**Meta tags et favicon** :
+- `favicon.svg` : icone ballon + ondes sonores sur fond navy
+- Meta tags Open Graph (og:title, og:description, og:image, og:site_name)
+- Meta tags Twitter Card (summary_large_image)
+- `theme-color` : #0f1629
+
+**Fix header blink au scroll rapide** :
+- Padding `py-3` fixe (plus de changement py-3/py-4 qui causait un saut)
+- Transition limitee a `opacity, background-color, backdrop-filter` (200ms)
+- `will-change` ajoute pour optimiser les repaint
+
+**Fichiers crees** :
+- `frontend/public/logo.png` : logo principal PNG transparent
+- `frontend/public/logo.jpeg` : logo original JPEG (source)
+- `frontend/public/favicon.svg` : favicon ballon + ondes
+- `frontend/public/og-image.svg` : image Open Graph
+- `frontend/public/logo.svg` : placeholder SVG (remplace par PNG)
+- `frontend/public/logo-small.svg` : placeholder SVG petit (remplace par PNG)
+
+**Fichiers modifies** :
+- `frontend/index.html` : favicon, meta tags OG/Twitter, theme-color
+- `frontend/src/pages/Home.jsx` : logo img, fix header blink
+- `frontend/src/components/Header.jsx` : logo img
+- `frontend/src/index.css` : logo-glow en drop-shadow
+
+---
+
+### Session du 5 fevrier 2026 - Nettoyage animations vote
+
+**Nettoyage effectue** :
+- Supprime `voteFlash` (flash colore au clic) - effet inutile
+- Supprime `getFlashOverlay()` de PlayerCard.jsx
+- Supprime `@keyframes voteFlash` et `.animate-vote-flash` de index.css
+- Simplifie Vote.jsx : animation de sortie immediate (plus de delai 150ms)
+
+**Card stack implemente (pattern pile de cartes)** :
+- 2 cartes rendues en meme temps : carte actuelle (relative, z-10) + carte suivante (absolute, dessous)
+- Au vote : carte du dessus swipe → revele celle du dessous
+- Joueur suivant charge en arriere-plan (zero skeleton entre joueurs)
+- 1er joueur affiche immediatement, 2e charge en parallele
+- Timeout animation aligne sur duree exit (250ms)
+
+**Fichiers modifies** :
+- `frontend/src/pages/Vote.jsx` : supprime voteFlash
+- `frontend/src/components/PlayerCard.jsx` : supprime voteFlash, ajoute state entered (en cours)
+- `frontend/src/index.css` : supprime voteFlash, ajoute enterScale (en cours)
+
+---
 
 ### Session du 4 fevrier 2026 (nuit) - Algo + Cron matchs
 

@@ -25,27 +25,14 @@ function Home() {
     <main className="min-h-screen bg-vibes">
       {/* Header sticky qui apparaît au scroll */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
-          ${scrolled
-            ? 'bg-fv-navy/95 backdrop-blur-md border-b border-white/10 py-3'
-            : 'bg-transparent py-4 pointer-events-none'}`}
+        className={`fixed top-0 left-0 right-0 z-50 py-3
+          bg-fv-navy/95 backdrop-blur-md border-b border-white/10
+          transition-transform duration-300 ease-out
+          ${scrolled ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <div className="container mx-auto px-4 flex justify-between items-center max-w-4xl">
-          <div
-            className={`flex items-baseline gap-1 transition-all duration-300
-              ${scrolled ? 'opacity-100 pointer-events-auto' : 'opacity-0'}`}
-          >
-            <span className="text-xl font-heading font-black tracking-wide text-white">
-              FOOT
-            </span>
-            <span className="text-xl font-heading font-black tracking-wide text-fv-green">
-              VIBES
-            </span>
-          </div>
-          <div
-            className={`flex gap-3 transition-all duration-300
-              ${scrolled ? 'opacity-100 pointer-events-auto' : 'opacity-0'}`}
-          >
+          <img src="/logo.png" alt="Foot Vibes" className="h-8" />
+          <div className="flex gap-3">
             <Link
               to="/classement"
               className="text-white/70 hover:text-white font-medium text-sm px-4 py-2 rounded-full
@@ -68,13 +55,12 @@ function Home() {
         {/* Hero Section */}
         <div className="text-center mb-10 animate-fade-in-up">
           {/* Logo FOOT VIBES */}
-          <div className="flex items-baseline justify-center gap-2 mb-6">
-            <span className="text-5xl sm:text-6xl md:text-7xl font-heading font-black tracking-wide text-white">
-              FOOT
-            </span>
-            <span className="text-5xl sm:text-6xl md:text-7xl font-heading font-black tracking-wide text-fv-green logo-glow">
-              VIBES
-            </span>
+          <div className="flex justify-center mb-6">
+            <img
+              src="/logo.png"
+              alt="Foot Vibes"
+              className="w-72 sm:w-96 md:w-[500px]"
+            />
           </div>
 
           {/* Tagline */}
