@@ -19,7 +19,6 @@ function Vote() {
   const { mode, voteCount, incrementVoteCount } = useMode();
   const [stack, setStack] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [feedback, setFeedback] = useState(null);
   const [celebration, setCelebration] = useState({ trigger: 0, message: '' });
   const [exitDirection, setExitDirection] = useState(null);
   const [error, setError] = useState(null);
@@ -66,11 +65,6 @@ function Vote() {
 
       if (MILESTONES[newCount]) {
         setCelebration({ trigger: Date.now(), message: MILESTONES[newCount] });
-      }
-
-      if (result.message) {
-        setFeedback(result.message);
-        setTimeout(() => setFeedback(null), 2000);
       }
 
       // Attendre la fin de l'animation de sortie
@@ -156,15 +150,6 @@ function Vote() {
             <p className="text-center text-white/40 text-sm mt-4">
               Mes votes : {voteCount}
             </p>
-
-            {feedback && (
-              <div className="absolute left-0 right-0 -bottom-8 flex justify-center">
-                <div className="bg-white/10 text-white text-center py-1.5 px-4 rounded-full text-xs
-                                animate-feedback-in backdrop-blur-sm border border-white/10">
-                  {feedback}
-                </div>
-              </div>
-            )}
 
             <p className="hidden sm:block text-center text-white/20 text-[10px] mt-4">
               ← → pour voter · ↓ pour passer
