@@ -77,6 +77,25 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 
 **Note** : Les pubs sont deployees mais invisibles jusqu'a validation du compte AdSense par Google.
 
+**Pages legales ajoutees** (conformite AdSense) :
+
+| Page | Route | Contenu |
+|------|-------|---------|
+| Confidentialite | `/confidentialite` | RGPD, cookies, donnees collectees, droits utilisateurs |
+| CGU | `/cgu` | Regles d'utilisation, votes, propriete intellectuelle |
+| A propos | `/a-propos` | Presentation Foot Vibes, fonctionnement |
+| Contact | `/contact` | Formulaire (question, bug, suggestion, RGPD) |
+
+**Fichiers crees** :
+- `frontend/src/pages/Privacy.jsx`
+- `frontend/src/pages/Terms.jsx`
+- `frontend/src/pages/About.jsx`
+- `frontend/src/pages/Contact.jsx`
+
+**Fichiers modifies** :
+- `frontend/src/App.jsx` : ajout des 4 routes
+- `frontend/src/components/Footer.jsx` : liens vers les pages legales
+
 ---
 
 ### Session du 5 fevrier 2026 - UI filtres classement
