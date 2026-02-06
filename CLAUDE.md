@@ -1,6 +1,6 @@
 # CLAUDE.md - Foot Vibes
 
-**Derniere mise a jour** : 5 fevrier 2026
+**Derniere mise a jour** : 6 fevrier 2026
 
 ---
 
@@ -15,6 +15,63 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 - **Frontend** : https://frontend-xtorbis-projects.vercel.app
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/foot-vibes
+
+### Session du 6 fevrier 2026 - Monetisation AdSense
+
+**Emplacements publicitaires implementes** :
+
+| Page | Emplacement | Format | Frequence |
+|------|-------------|--------|-----------|
+| Vote | Interstitiel plein ecran | Video/Display | Tous les 10 votes |
+| Classement | Banner horizontal en haut | 728x90 (desktop) / 320x50 (mobile) | 1x |
+| Classement | Banner inline dans tableau | 728x90 / 320x50 | Tous les 25 joueurs |
+| Home | Banner sous grille clubs | 728x90 / 320x50 | 1x |
+
+**Composant AdBanner.jsx** :
+- Formats supportes : leaderboard (728x90), banner (320x50), rectangle (300x250), skyscraper (120x600)
+- Detection ad blocker avec fallback gracieux (rien affiche)
+- Mode dev (`DEV_MODE = true`) : placeholders visibles pour tester
+- Responsive : format different selon breakpoint
+
+**Composant AdInterstitiel.jsx** :
+- Plein ecran avec fond opaque `#0f1629`
+- z-index 99999 pour couvrir tout (header inclus)
+- Countdown 5 secondes avant bouton "Continuer"
+- Zone pub centrale large (format video/display)
+- Detection ad blocker : fermeture auto si bloque
+
+**Integration Vote.jsx** :
+- `AD_INTERVAL = 10` : interstitiel tous les 10 votes
+- Delai 1.5s si milestone (confetti d'abord), 300ms sinon
+- State `showAd` + `setShowAd(false)` au close
+
+**Integration Ranking.jsx** :
+- Banner en haut de page (responsive)
+- Prop `adInterval={25}` passee a RankingTable
+
+**Integration RankingTable.jsx** :
+- Fonction `renderRows()` insere une pub avant chaque multiple de 25
+- `<tr>` avec `colSpan={6}` pour la banniere inline
+
+**Fichiers crees** :
+- `frontend/src/components/AdBanner.jsx`
+- `frontend/src/components/AdInterstitial.jsx`
+
+**Fichiers modifies** :
+- `frontend/index.html` : script AdSense dans `<head>`
+- `frontend/src/index.css` : animation `.animate-scale-in`
+- `frontend/src/pages/Home.jsx` : AdBanner sous ClubGrid
+- `frontend/src/pages/Ranking.jsx` : AdBanner en haut
+- `frontend/src/pages/Vote.jsx` : AdInterstitial tous les 10 votes
+- `frontend/src/components/RankingTable.jsx` : AdBanner inline tous les 25 joueurs
+
+**Avant mise en prod** :
+1. Remplacer `ca-pub-XXXXXXXXXXXXXXXX` par le vrai Publisher ID AdSense
+2. Creer les slots dans la console AdSense et remplacer les placeholders
+3. Passer `DEV_MODE = false` dans AdBanner.jsx et AdInterstitial.jsx
+4. Ajouter banniere cookies RGPD (consentement pub ciblee)
+
+---
 
 ### Session du 5 fevrier 2026 - UI filtres classement
 
@@ -446,7 +503,9 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 | ClubGrid | `src/components/ClubGrid.jsx` | OK | Grille des 18 clubs cliquables |
 | PlayerCard | `src/components/PlayerCard.jsx` | OK | Carte joueur avec stats adaptees au poste |
 | VoteButtons | `src/components/VoteButtons.jsx` | OK | 3 boutons ronds (pouce bas/neutre/pouce haut) |
-| RankingTable | `src/components/RankingTable.jsx` | OK | Tableau classement avec rang, drapeau, nom, club, score |
+| RankingTable | `src/components/RankingTable.jsx` | OK | Tableau classement avec rang, drapeau, nom, club, score + pubs inline |
+| AdBanner | `src/components/AdBanner.jsx` | OK | Banner pub reutilisable (4 formats, mode dev) |
+| AdInterstitial | `src/components/AdInterstitial.jsx` | OK | Interstitiel plein ecran avec countdown |
 | ModeContext | `src/contexts/ModeContext.jsx` | OK | Gestion mode (L1/club) + compteur votes en localStorage |
 | API utils | `src/utils/api.js` | OK | Fonctions fetch pour l'API |
 
@@ -578,6 +637,7 @@ Avant deploiement, ajouter des features differenciantes :
 | **Football-Data.org** | API matchs L1 (cron) | Gratuit (10 req/min) |
 | **cron-job.org** | Planification cron weekend | Gratuit |
 | **flagcdn.com** | Drapeaux nationalités | Gratuit (CDN public) |
+| **Google AdSense** | Monetisation pub | Gratuit (revenus au CPM) |
 
 **APIs testées mais abandonnées :**
 - SofaScore : bloqué (Cloudflare 403)
@@ -736,3 +796,5 @@ node scripts/importTransfermarkt.js
 | 4 fev 2026 (soir) | Top 3 classement : turquoise avec opacites (plus d'or/argent/bronze) |
 | 4 fev 2026 (soir) | Vote : layout viewport sans scroll |
 | 4 fev 2026 (soir) | Noms clubs : formatage intelligent (Olympique de Marseille) |
+| 6 fev 2026 | Monetisation : emplacements AdSense (interstitiel, banners) |
+| 6 fev 2026 | Interstitiel tous les 10 votes, banners sur Home/Classement |
