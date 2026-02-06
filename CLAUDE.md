@@ -30,7 +30,7 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 **Composant AdBanner.jsx** :
 - Formats supportes : leaderboard (728x90), banner (320x50), rectangle (300x250), skyscraper (120x600)
 - Detection ad blocker avec fallback gracieux (rien affiche)
-- Mode dev (`DEV_MODE = true`) : placeholders visibles pour tester
+- Mode dev (`DEV_MODE = false`) : pubs invisibles jusqu'a validation AdSense
 - Responsive : format different selon breakpoint
 
 **Composant AdInterstitiel.jsx** :
@@ -72,8 +72,10 @@ Le projet Foot Vibes est une application web de vote emotionnel pour classer les
 **Avant mise en prod** :
 1. ~~Remplacer `ca-pub-XXXXXXXXXXXXXXXX` par le vrai Publisher ID AdSense~~ FAIT
 2. Creer les slots dans la console AdSense et remplacer les placeholders
-3. Passer `DEV_MODE = false` dans AdBanner.jsx et AdInterstitial.jsx
+3. ~~Passer `DEV_MODE = false` dans AdBanner.jsx et AdInterstitial.jsx~~ FAIT
 4. Ajouter banniere cookies RGPD (consentement pub ciblee)
+
+**Note** : Les pubs sont deployees mais invisibles jusqu'a validation du compte AdSense par Google.
 
 ---
 
