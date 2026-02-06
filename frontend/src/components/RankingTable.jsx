@@ -1,3 +1,5 @@
+import AdBanner from './AdBanner';
+
 // Mapping nationalité -> code ISO pour les drapeaux
 // Inclut les variantes françaises (Transfermarkt FR) et anglaises
 const NATIONALITY_CODES = {
@@ -322,7 +324,7 @@ function getMissingNationalities(players) {
   return Array.from(missing).sort();
 }
 
-function RankingTable({ players }) {
+function RankingTable({ players, adInterval = 0 }) {
   if (!players || players.length === 0) {
     return <p className="text-center text-white/40 mt-8 animate-fade-in-up">Aucun joueur dans le classement.</p>;
   }
@@ -332,6 +334,64 @@ function RankingTable({ players }) {
     if (rank === 2) return 'bg-emerald-500/70 text-fv-navy';
     if (rank === 3) return 'bg-emerald-500/40 text-white';
     return 'bg-white/10 text-white/60';
+  };
+
+  // Insérer des pubs tous les N joueurs
+  const renderRows = () => {
+    const rows = [];
+    players.forEach((player, index) => {
+      // Insérer une pub avant ce joueur si on atteint l'intervalle
+      if (adInterval > 0 && index > 0 && index % adInterval === 0) {
+        rows.push(
+          <tr key={`ad-${index}`} className="border-b border-white/5">
+            <td colSpan={6} className="py-3">
+              <AdBanner slot="RANKING_INLINE_SLOT" format="leaderboard" className="hidden sm:flex" />
+              <AdBanner slot="RANKING_INLINE_SLOT" format="banner" className="flex sm:hidden" />
+            </td>
+          </tr>
+        );
+      }
+
+      rows.push(
+        <tr
+          key={player.id}
+          className="border-b border-white/5 hover:bg-white/5
+                     transition-colors duration-150 animate-fade-in-up"
+          style={{ animationDelay: `${index * 20}ms`, animationFillMode: 'backwards' }}
+        >
+          <td className="py-2 sm:py-3 px-2 sm:px-3">
+            <span className={`inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs sm:text-sm ${getRankStyle(player.rank)}`}>
+              {player.rank}
+            </span>
+          </td>
+          <td className="py-2 sm:py-3 px-2 sm:px-3">
+            <div className="flex items-center gap-2">
+              {getFlag(player.nationality) && (
+                <img
+                  src={getFlag(player.nationality)}
+                  alt={player.nationality}
+                  className="w-4 h-3 object-cover"
+                />
+              )}
+              <span className="font-semibold text-white text-sm sm:text-base">{player.name}</span>
+            </div>
+          </td>
+          <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/50 hidden sm:table-cell">{player.club}</td>
+          <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/50 hidden md:table-cell">{player.position}</td>
+          <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/60 hidden sm:table-cell text-center">{player.unique_voters || 0}</td>
+          <td className="py-2 sm:py-3 px-2 sm:px-3 text-right font-bold">
+            <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm ${
+              player.score > 0 ? 'bg-emerald-500/20 text-emerald-400' :
+              player.score < 0 ? 'bg-red-500/20 text-red-400' :
+              'bg-white/10 text-white/40'
+            }`}>
+              {player.score > 0 ? '+' : ''}{player.score}
+            </span>
+          </td>
+        </tr>
+      );
+    });
+    return rows;
   };
 
   return (
@@ -348,44 +408,7 @@ function RankingTable({ players }) {
           </tr>
         </thead>
         <tbody>
-          {players.map((player, index) => (
-            <tr
-              key={player.id}
-              className="border-b border-white/5 hover:bg-white/5
-                         transition-colors duration-150 animate-fade-in-up"
-              style={{ animationDelay: `${index * 20}ms`, animationFillMode: 'backwards' }}
-            >
-              <td className="py-2 sm:py-3 px-2 sm:px-3">
-                <span className={`inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs sm:text-sm ${getRankStyle(player.rank)}`}>
-                  {player.rank}
-                </span>
-              </td>
-              <td className="py-2 sm:py-3 px-2 sm:px-3">
-                <div className="flex items-center gap-2">
-                  {getFlag(player.nationality) && (
-                    <img
-                      src={getFlag(player.nationality)}
-                      alt={player.nationality}
-                      className="w-4 h-3 object-cover"
-                    />
-                  )}
-                  <span className="font-semibold text-white text-sm sm:text-base">{player.name}</span>
-                </div>
-              </td>
-              <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/50 hidden sm:table-cell">{player.club}</td>
-              <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/50 hidden md:table-cell">{player.position}</td>
-              <td className="py-2 sm:py-3 px-2 sm:px-3 text-white/60 hidden sm:table-cell text-center">{player.unique_voters || 0}</td>
-              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right font-bold">
-                <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm ${
-                  player.score > 0 ? 'bg-emerald-500/20 text-emerald-400' :
-                  player.score < 0 ? 'bg-red-500/20 text-red-400' :
-                  'bg-white/10 text-white/40'
-                }`}>
-                  {player.score > 0 ? '+' : ''}{player.score}
-                </span>
-              </td>
-            </tr>
-          ))}
+          {renderRows()}
         </tbody>
       </table>
     </div>

@@ -4,6 +4,7 @@ import PlayerCard from '../components/PlayerCard';
 import PlayerCardSkeleton from '../components/PlayerCardSkeleton';
 import VoteButtons from '../components/VoteButtons';
 import Confetti from '../components/Confetti';
+import AdInterstitial from '../components/AdInterstitial';
 import { fetchRandomPlayer, submitVote } from '../utils/api';
 
 const MILESTONES = {
@@ -15,6 +16,9 @@ const MILESTONES = {
   500: '500 votes ! Hall of Fame !',
 };
 
+// Interstitiel pub tous les 10 votes
+const AD_INTERVAL = 10;
+
 function Vote() {
   const { mode, voteCount, incrementVoteCount } = useMode();
   const [stack, setStack] = useState([]);
@@ -23,6 +27,7 @@ function Vote() {
   const [exitDirection, setExitDirection] = useState(null);
   const [error, setError] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [showAd, setShowAd] = useState(false);
 
   const votedIdsRef = useRef([]);
   const isVotingRef = useRef(false);
@@ -113,6 +118,11 @@ function Vote() {
         setCelebration({ trigger: Date.now(), message: MILESTONES[newCount] });
       }
 
+      // Afficher pub tous les 10 votes
+      if (newCount % AD_INTERVAL === 0) {
+        setTimeout(() => setShowAd(true), MILESTONES[newCount] ? 1500 : 300);
+      }
+
       // Attendre la fin de l'animation de sortie
       setTimeout(() => {
         // Promouvoir la carte suivante (batché par React)
@@ -154,6 +164,11 @@ function Vote() {
   return (
     <main className={`h-[calc(100vh-64px)] ${bgStyle} px-4 flex flex-col justify-center`}>
       <Confetti trigger={celebration.trigger} message={celebration.message} />
+      <AdInterstitial
+        isOpen={showAd}
+        onClose={() => setShowAd(false)}
+        slot="VOTE_INTERSTITIAL_SLOT"
+      />
       <div className="max-w-sm mx-auto w-full">
         {error ? (
           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import RankingTable from '../components/RankingTable';
 import { fetchRanking } from '../utils/api';
 import { CLUB_NAMES, getClubDisplayName } from '../config/clubs';
+import AdBanner from '../components/AdBanner';
 
 const PERIODS = [
   { id: 'week', label: '7 jours' },
@@ -46,6 +47,11 @@ function Ranking() {
   return (
     <main className="min-h-screen bg-vibes">
       <div className="container mx-auto px-4 py-6 max-w-4xl relative z-10">
+      {/* Banner pub en haut */}
+      <div className="mb-4">
+        <AdBanner slot="RANKING_TOP_SLOT" format="leaderboard" className="hidden sm:flex" />
+        <AdBanner slot="RANKING_TOP_SLOT" format="banner" className="flex sm:hidden" />
+      </div>
       {/* Filtres : Club, Position, Période, Français */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 animate-fade-in-up">
         {/* Club dropdown */}
@@ -151,7 +157,7 @@ function Ranking() {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/10 border-t-fv-green" />
         </div>
       ) : (
-        <RankingTable players={players} />
+        <RankingTable players={players} adInterval={25} />
       )}
       </div>
     </main>

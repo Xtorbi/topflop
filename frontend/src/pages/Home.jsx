@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMode } from '../contexts/ModeContext';
 import ClubGrid from '../components/ClubGrid';
+import AdBanner from '../components/AdBanner';
 
 function Home() {
   const navigate = useNavigate();
@@ -106,6 +107,12 @@ function Home() {
 
         {/* Clubs Grid */}
         <ClubGrid />
+
+        {/* Banner publicitaire */}
+        <div className="mt-8">
+          <AdBanner slot="HOME_BANNER_SLOT" format="leaderboard" className="hidden sm:flex" />
+          <AdBanner slot="HOME_BANNER_SLOT" format="banner" className="flex sm:hidden" />
+        </div>
       </div>
     </main>
   );
