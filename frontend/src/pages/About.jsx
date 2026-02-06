@@ -12,16 +12,16 @@ function About() {
         </Link>
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-          <h1 className="font-heading text-4xl text-white mb-8 tracking-wide">À propos de Foot Vibes</h1>
+          <h1 className="font-heading text-4xl text-white mb-8 tracking-wide">À propos de Golgoat</h1>
 
           <div className="prose prose-invert prose-sm max-w-none space-y-6 text-white/80">
 
             <section>
               <h2 className="text-xl font-semibold text-white mt-8 mb-4">Notre mission</h2>
               <p>
-                Foot Vibes est une plateforme communautaire qui permet aux fans de football d'exprimer
-                leur ressenti sur les joueurs de Ligue 1. Pas de statistiques froides, pas d'algorithmes
-                complexes : juste l'émotion pure des supporters.
+                Golgoat est le baromètre communautaire des joueurs de Ligue 1. Exprimez votre ressenti
+                sur les joueurs : pas de statistiques froides, pas d'algorithmes complexes,
+                juste l'émotion pure des supporters.
               </p>
             </section>
 
@@ -43,7 +43,7 @@ function About() {
                   </div>
                   <div>
                     <p className="font-semibold text-white">Votez selon votre ressenti</p>
-                    <p className="text-white/60 text-sm">Pouce haut, neutre ou pouce bas - exprimez votre vibe</p>
+                    <p className="text-white/60 text-sm">Pouce haut, neutre ou pouce bas - exprimez votre avis</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 bg-white/5 rounded-xl p-4">
@@ -52,7 +52,7 @@ function About() {
                   </div>
                   <div>
                     <p className="font-semibold text-white">Consultez le classement</p>
-                    <p className="text-white/60 text-sm">Découvrez quels joueurs ont la meilleure vibe selon la communauté</p>
+                    <p className="text-white/60 text-sm">Découvrez quels joueurs sont les plus cotés par la communauté</p>
                   </div>
                 </div>
               </div>
@@ -68,7 +68,7 @@ function About() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mt-8 mb-4">Pourquoi Foot Vibes ?</h2>
+              <h2 className="text-xl font-semibold text-white mt-8 mb-4">Pourquoi Golgoat ?</h2>
               <ul className="list-disc pl-6 space-y-2 mt-3">
                 <li><strong className="text-white">Simple</strong> : Un swipe ou un clic, c'est tout</li>
                 <li><strong className="text-white">Fun</strong> : Pas de prise de tête, juste du feeling</li>
