@@ -10,10 +10,21 @@ import { useState, useEffect, useRef } from 'react';
  * @param {string} slot - ID du slot AdSense
  */
 
+// ADS_ENABLED : mettre à true une fois AdSense validé
+const ADS_ENABLED = false;
+
 // Mode dev : affiche un placeholder visible (mettre à false en prod)
 const DEV_MODE = false;
 
 function AdInterstitial({ isOpen, onClose, slot }) {
+  // Si les pubs sont désactivées, fermer immédiatement
+  useEffect(() => {
+    if (!ADS_ENABLED && isOpen) {
+      onClose();
+    }
+  }, [isOpen, onClose]);
+
+  if (!ADS_ENABLED) return null;
   const [countdown, setCountdown] = useState(5);
   const [canSkip, setCanSkip] = useState(false);
   const [adBlocked, setAdBlocked] = useState(false);

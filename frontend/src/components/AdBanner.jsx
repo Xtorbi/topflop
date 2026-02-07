@@ -9,6 +9,9 @@ import { useEffect, useRef, useState } from 'react';
  * @param {string} className - Classes CSS additionnelles
  */
 
+// ADS_ENABLED : mettre à true une fois AdSense validé
+const ADS_ENABLED = false;
+
 // Mode dev : affiche des placeholders visibles (mettre à false en prod)
 const DEV_MODE = false;
 
@@ -20,6 +23,9 @@ const AD_FORMATS = {
 };
 
 function AdBanner({ slot, format = 'banner', className = '' }) {
+  // Si les pubs sont désactivées, ne rien afficher
+  if (!ADS_ENABLED) return null;
+
   const adRef = useRef(null);
   const [adBlocked, setAdBlocked] = useState(false);
   const [loaded, setLoaded] = useState(false);
