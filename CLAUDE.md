@@ -16,7 +16,7 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
-### Session du 7 fevrier 2026 - Logo Topflop + Repo rename
+### Session du 7 fevrier 2026 - Logo, AdSense, Algo fix
 
 **Repo GitHub renomme** : `foot-vibes` → `topflop`
 - Commande : `gh repo rename topflop --yes`
@@ -36,24 +36,52 @@
 3. Erosion des pixels blancs en bordure exterieure (2 passes)
 4. Recadrage serre + resize a 400px de large
 
-**Probleme restant** : Leger lisere blanc visible autour du logo sur fond navy
-- Cause : anti-aliasing de l'image originale Ideogram
-- Solutions possibles :
-  - Regenerer le logo avec fond navy solide dans Ideogram
-  - Utiliser CSS `mix-blend-mode` ou `filter` pour attenuer
-  - Accepter le leger halo (peu visible en pratique)
+**Taille logo Home.jsx** : `w-48 sm:w-56 md:w-64`
 
-**Taille logo Home.jsx** : `w-40 sm:w-48 md:w-56` (reduit de w-72/w-96/w-[500px])
+**Fix algo selection joueur** :
+- Bug : l'algo utilisait `last_matchday_played` (jamais mis a jour) au lieu de `last_match_date`
+- Fix : buckets bases sur le temps depuis `last_match_date` (< 24h, < 48h, < 72h, older)
+- Fichier : `backend/controllers/playersController.js`
 
-**Fichiers logo dans le repo** (non commites, usage local) :
-- `logo5.png` : version avec fond navy rectangulaire
-- `logo6.png` : version retenue (pouce blanc/vert)
-- `logo7.png` : version alternative (pouce tout vert)
+**Fix matching equipe Lens** :
+- API Football-Data retourne "Racing Club de Lens" vs "RC Lens" en BDD
+- Ajout alias explicite + fallback par mot-cle ville (Paris, Marseille, Lens...)
+- Fichier : `backend/routes/admin.js`
+
+**Desactivation pubs en attendant AdSense** :
+- Flag `ADS_ENABLED = false` dans AdBanner.jsx et AdInterstitial.jsx
+- Les composants retournent `null` si desactives
+- AdInterstitial ferme automatiquement si appele avec ADS_ENABLED = false
+- A reactiver une fois le compte AdSense valide
+
+**Page A propos enrichie (pour AdSense)** :
+- Section "L'histoire de Topflop" - origine et philosophie
+- Section "Systeme de score" - transparence sur le calcul (+1/-1/0)
+- FAQ avec 6 questions frequentes
+- Section "Nos engagements" - 4 valeurs avec icones (vie privee, transparence, communaute, gratuit)
+- CTAs en bas de page (Voter, Classement)
+- Liens vers pages legales
+
+**Agent UI designer cree** :
+- Fichier : `.claude/agents/ui-designer.md`
+- Palette couleurs Topflop, guidelines typo, checklist analyse
+- Inspire du projet Gargameal
+
+**Ameliorations UI (accessibilite)** :
+- Touch targets 44px minimum sur boutons header
+- Contraste ameliore sur separateur (text-white/60)
+- Support `prefers-reduced-motion` dans index.css
 
 **Fichiers modifies** :
 - `frontend/public/logo.png` : nouveau logo traite
-- `frontend/src/pages/Home.jsx` : taille logo reduite
-- `CLAUDE.md` : URL GitHub mise a jour
+- `frontend/src/pages/Home.jsx` : taille logo, touch targets
+- `frontend/src/pages/About.jsx` : contenu enrichi
+- `frontend/src/components/AdBanner.jsx` : ADS_ENABLED flag
+- `frontend/src/components/AdInterstitial.jsx` : ADS_ENABLED flag
+- `frontend/src/index.css` : prefers-reduced-motion
+- `backend/controllers/playersController.js` : fix algo buckets
+- `backend/routes/admin.js` : fix matching Lens + fallback ville
+- `.claude/agents/ui-designer.md` : nouvel agent
 
 ---
 
