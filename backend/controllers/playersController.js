@@ -30,19 +30,26 @@ function getRandomPlayer(req, res) {
     return res.status(404).json({ error: 'Aucun joueur disponible' });
   }
 
-  // Répartir en buckets par récence de la dernière journée jouée
-  // 80% → Joueurs ayant joué la journée actuelle (J)
-  // 15% → Joueurs ayant joué J-1
-  // 4%  → Joueurs ayant joué J-2
-  // 1%  → Reste (J-3 et avant)
+  // Répartir en buckets par récence du dernier match joué (last_match_date)
+  // 80% → Joueurs ayant joué dans les 24h
+  // 15% → Joueurs ayant joué entre 24h et 48h
+  // 4%  → Joueurs ayant joué entre 48h et 72h
+  // 1%  → Reste (pas de match récent)
   const buckets = { current: [], jMinus1: [], jMinus2: [], older: [] };
+  const now = Date.now();
 
   for (const player of allPlayers) {
-    const diff = currentMatchday - (player.last_matchday_played || 0);
-    if (diff === 0) buckets.current.push(player);
-    else if (diff === 1) buckets.jMinus1.push(player);
-    else if (diff === 2) buckets.jMinus2.push(player);
-    else buckets.older.push(player);
+    if (player.last_match_date) {
+      const matchTime = new Date(player.last_match_date).getTime();
+      const hoursAgo = (now - matchTime) / (1000 * 60 * 60);
+
+      if (hoursAgo < 24) buckets.current.push(player);
+      else if (hoursAgo < 48) buckets.jMinus1.push(player);
+      else if (hoursAgo < 72) buckets.jMinus2.push(player);
+      else buckets.older.push(player);
+    } else {
+      buckets.older.push(player);
+    }
   }
 
   // Sélection 80/15/4/1 avec fallback
@@ -65,8 +72,6 @@ function getRandomPlayer(req, res) {
 
   // Sélection aléatoire pondérée dans le bucket
   // Favorise : joueurs du dernier match, grands clubs, titulaires, performants
-  const now = Date.now();
-
   const weights = bucket.map(p => {
     const baseWeight = 50;
 
