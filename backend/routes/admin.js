@@ -45,20 +45,41 @@ const FOOTBALLDATA_TO_DB = {
   'Metz': 'FC Metz',
 };
 
+// Mots-clés des villes pour fallback matching
+const CITY_KEYWORDS = [
+  'Paris', 'Marseille', 'Lyon', 'Monaco', 'Lille', 'Nice', 'Lens',
+  'Rennes', 'Brest', 'Strasbourg', 'Toulouse', 'Nantes', 'Havre',
+  'Auxerre', 'Angers', 'Lorient', 'Metz'
+];
+
 // Trouver le nom du club en BDD
 function findClubName(apiName) {
   if (!apiName) return null;
+  const apiLower = apiName.toLowerCase();
 
-  // Essai direct
+  // 1. Essai direct
   if (FOOTBALLDATA_TO_DB[apiName]) {
     return FOOTBALLDATA_TO_DB[apiName];
   }
 
-  // Recherche partielle
+  // 2. Recherche partielle (contains)
   for (const [key, value] of Object.entries(FOOTBALLDATA_TO_DB)) {
-    if (apiName.toLowerCase().includes(key.toLowerCase()) ||
-        key.toLowerCase().includes(apiName.toLowerCase())) {
+    if (apiLower.includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(apiLower)) {
       return value;
+    }
+  }
+
+  // 3. Fallback: chercher un mot-clé ville dans le nom API
+  for (const city of CITY_KEYWORDS) {
+    if (apiLower.includes(city.toLowerCase())) {
+      // Chercher un club avec cette ville dans les valeurs du mapping
+      for (const [key, value] of Object.entries(FOOTBALLDATA_TO_DB)) {
+        if (value.toLowerCase().includes(city.toLowerCase())) {
+          console.log(`[MATCH FALLBACK] "${apiName}" -> "${value}" (via city: ${city})`);
+          return value;
+        }
+      }
     }
   }
 
