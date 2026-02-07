@@ -22,8 +22,8 @@ function Footer() {
 
         {/* Copyright */}
         <p className="text-center text-white/30 text-sm">
-          <span className="font-semibold text-white">GOL</span>
-          <span className="font-semibold text-fv-green">GOAT</span>
+          <span className="font-semibold text-white">GOAL</span>
+          <span className="font-semibold text-fv-green">GOT</span>
           {' '}© 2026
         </p>
       </div>

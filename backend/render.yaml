@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: golgoat-api
+    name: goalgot-api
     runtime: node
     buildCommand: npm install
     startCommand: npm start

@@ -24,7 +24,7 @@ function Header() {
         <Link to="/" className="group">
           <img
             src="/logo.png"
-            alt="Golgoat"
+            alt="Goalgot"
             className="h-8 sm:h-10 group-hover:brightness-125 transition-all"
           />
         </Link>
