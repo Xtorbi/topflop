@@ -88,13 +88,15 @@ function findClubName(apiName) {
 
 /**
  * Route pour mettre à jour les dates de match des joueurs
- * Utilise Football-Data.org API (gratuit)
+ * Utilise Football-Data.org API (gratuit, 10 req/min)
+ * Appelée par cron-job.org tous les jours à 00h, 17h, 20h, 23h
  */
 router.get('/update-matches', async (req, res) => {
   const { key } = req.query;
 
   // Vérification de la clé admin
   if (key !== ADMIN_KEY) {
+    console.warn(`[CRON] Unauthorized attempt at ${new Date().toISOString()}`);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -104,8 +106,8 @@ router.get('/update-matches', async (req, res) => {
   try {
     logs.push(`Starting update at ${now.toISOString()}`);
 
-    // Récupérer les matchs des 3 derniers jours
-    const dateFrom = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    // Récupérer les matchs des 7 derniers jours (marge large pour ne rien rater)
+    const dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dateFromStr = dateFrom.toISOString().split('T')[0];
     const dateToStr = now.toISOString().split('T')[0];
 
@@ -157,16 +159,22 @@ router.get('/update-matches', async (req, res) => {
       }
     }
 
-    res.json({
+    const summary = {
       success: true,
       matchesFound: matches.length,
+      clubsUpdated: updatedClubs.length,
       updatedClubs,
       unmatchedTeams: [...new Set(unmatchedTeams)],
       timestamp: now.toISOString(),
       logs,
-    });
+    };
+
+    lastCronResult = { ...summary, executedAt: now.toISOString() };
+    console.log(`[CRON] OK - ${matches.length} matchs, ${updatedClubs.length} clubs mis à jour`);
+    res.json(summary);
   } catch (error) {
-    console.error('Error updating matches:', error);
+    lastCronResult = { success: false, error: error.message, executedAt: now.toISOString() };
+    console.error(`[CRON] ERREUR at ${now.toISOString()}:`, error.message);
     logs.push(`Error: ${error.message}`);
     res.status(500).json({
       error: error.message,
@@ -176,11 +184,52 @@ router.get('/update-matches', async (req, res) => {
   }
 });
 
+// Stocker le dernier résultat du cron pour monitoring
+let lastCronResult = null;
+
 /**
  * Route de health check pour le cron
  */
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/**
+ * Status du cron : dernier résultat + état des last_match_date en BDD
+ */
+router.get('/cron-status', (req, res) => {
+  const { key } = req.query;
+  if (key !== ADMIN_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { queryAll, queryOne } = require('../models/database');
+
+  // Combien de joueurs ont un last_match_date ?
+  const withDate = queryOne(
+    `SELECT COUNT(*) as count FROM players WHERE last_match_date IS NOT NULL AND source_season = ?`,
+    [CURRENT_SEASON]
+  );
+  const withoutDate = queryOne(
+    `SELECT COUNT(*) as count FROM players WHERE last_match_date IS NULL AND source_season = ?`,
+    [CURRENT_SEASON]
+  );
+
+  // Clubs avec le match le plus récent
+  const recentClubs = queryAll(
+    `SELECT club, MAX(last_match_date) as last_match
+     FROM players WHERE source_season = ? AND last_match_date IS NOT NULL
+     GROUP BY club ORDER BY last_match DESC`,
+    [CURRENT_SEASON]
+  );
+
+  res.json({
+    lastCronResult: lastCronResult || 'Aucun cron exécuté depuis le redémarrage',
+    playersWithMatchDate: withDate?.count || 0,
+    playersWithoutMatchDate: withoutDate?.count || 0,
+    recentClubMatches: recentClubs,
+    serverTime: new Date().toISOString(),
+  });
 });
 
 module.exports = router;

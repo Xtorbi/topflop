@@ -24,10 +24,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Keep-alive : empêche Render free tier de s'endormir
+// Ping toutes les 14 minutes (Render sleep après 15 min d'inactivité)
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+  setInterval(() => {
+    fetch(`${RENDER_URL}/api/health`).catch(() => {});
+  }, 14 * 60 * 1000);
+}
+
 // Init DB then start server
 initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Topflop API running on port ${PORT}`);
+    if (RENDER_URL) console.log(`Keep-alive enabled for ${RENDER_URL}`);
   });
 }).catch(err => {
   console.error('Failed to initialize database:', err);

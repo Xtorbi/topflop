@@ -98,7 +98,7 @@ function Vote() {
     init();
   }, [mode]);
 
-  const handleVote = async (voteType) => {
+  const handleVote = (voteType) => {
     if (stack.length === 0 || isVotingRef.current) return;
     isVotingRef.current = true;
 
@@ -107,44 +107,40 @@ function Vote() {
     setDragOffset({ x: 0, y: 0 });
     setExitDirection(direction);
 
-    try {
-      const result = await submitVote(currentPlayer.id, voteType, mode);
-      const newCount = voteCount + 1;
-      incrementVoteCount();
-
-      votedIdsRef.current = [...votedIdsRef.current, currentPlayer.id];
-
-      if (MILESTONES[newCount]) {
-        setCelebration({ trigger: Date.now(), message: MILESTONES[newCount] });
-      }
-
-      // Afficher pub tous les 10 votes
-      if (newCount % AD_INTERVAL === 0) {
-        setTimeout(() => setShowAd(true), MILESTONES[newCount] ? 1500 : 300);
-      }
-
-      // Attendre la fin de l'animation de sortie
-      setTimeout(() => {
-        // Promouvoir la carte suivante (batché par React)
-        isVotingRef.current = false;
-        setExitDirection(null);
-        setStack(prev => prev.slice(1));
-
-        // Charger le prochain joueur en arrière-plan
-        const remainingIds = stack.slice(1).map(p => p.id);
-        fetchRandomPlayer(mode, [...votedIdsRef.current, ...remainingIds])
-          .then(newPlayer => {
-            if (newPlayer) {
-              setStack(prev => [...prev, newPlayer]);
-            }
-          })
-          .catch(() => {});
-      }, 250);
-    } catch (err) {
+    // Update optimiste : on n'attend pas la réponse API
+    submitVote(currentPlayer.id, voteType, mode).catch(err => {
       console.error('Erreur vote:', err);
+    });
+
+    const newCount = voteCount + 1;
+    incrementVoteCount();
+    votedIdsRef.current = [...votedIdsRef.current, currentPlayer.id];
+
+    if (MILESTONES[newCount]) {
+      setCelebration({ trigger: Date.now(), message: MILESTONES[newCount] });
+    }
+
+    // Afficher pub tous les 10 votes
+    if (newCount % AD_INTERVAL === 0) {
+      setTimeout(() => setShowAd(true), MILESTONES[newCount] ? 1500 : 300);
+    }
+
+    // Attendre la fin de l'animation de sortie (250ms)
+    setTimeout(() => {
       isVotingRef.current = false;
       setExitDirection(null);
-    }
+      setStack(prev => prev.slice(1));
+
+      // Charger le prochain joueur en arrière-plan
+      const remainingIds = stack.slice(1).map(p => p.id);
+      fetchRandomPlayer(mode, [...votedIdsRef.current, ...remainingIds])
+        .then(newPlayer => {
+          if (newPlayer) {
+            setStack(prev => [...prev, newPlayer]);
+          }
+        })
+        .catch(() => {});
+    }, 250);
   };
 
   useEffect(() => {
