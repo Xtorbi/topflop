@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Masquer la scrollbar (carrousel) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== Animations Topflop ===== */
 
 /* Fade in + slide up pour l'apparition des cartes */

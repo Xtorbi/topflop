@@ -6,6 +6,7 @@ import VoteButtons from '../components/VoteButtons';
 import Confetti from '../components/Confetti';
 import AdInterstitial from '../components/AdInterstitial';
 import { fetchRandomPlayer, submitVote } from '../utils/api';
+import { isMatchMode, parseMatchMode, getClubLogo } from '../config/clubs';
 
 const MILESTONES = {
   10: '10 votes ! Tu t\'es bien échauffé.',
@@ -156,6 +157,7 @@ function Vote() {
   const bgStyle = 'bg-vibes';
   const currentPlayer = stack[0];
   const nextPlayer = stack[1];
+  const matchData = isMatchMode(mode) ? parseMatchMode(mode) : null;
 
   return (
     <main className={`h-[calc(100vh-64px)] ${bgStyle} px-4 flex flex-col justify-center`}>
@@ -166,6 +168,16 @@ function Vote() {
         slot="VOTE_INTERSTITIAL_SLOT"
       />
       <div className="max-w-sm mx-auto w-full">
+        {/* Bannière contexte match */}
+        {matchData && (
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <img src={getClubLogo(matchData.homeClub.tmId)} alt="" className="w-4 h-4 object-contain" />
+            <span className="text-white/50 text-xs">{matchData.homeClub.name}</span>
+            <span className="text-white/30 text-xs">vs</span>
+            <span className="text-white/50 text-xs">{matchData.awayClub.name}</span>
+            <img src={getClubLogo(matchData.awayClub.tmId)} alt="" className="w-4 h-4 object-contain" />
+          </div>
+        )}
         {error ? (
           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
             <p className="text-red-400 mb-4">{error}</p>

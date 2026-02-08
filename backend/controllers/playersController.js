@@ -16,7 +16,16 @@ function getRandomPlayer(req, res) {
   `;
   const params = [CURRENT_SEASON];
 
-  if (context !== 'ligue1') {
+  if (context.startsWith('match:')) {
+    // Mode match : "match:clubId1:clubId2"
+    const parts = context.split(':');
+    const club1 = L1_CLUBS.find(c => c.id === parts[1]);
+    const club2 = L1_CLUBS.find(c => c.id === parts[2]);
+    if (club1 && club2) {
+      query += ' AND club IN (?, ?)';
+      params.push(club1.name, club2.name);
+    }
+  } else if (context !== 'ligue1') {
     const club = L1_CLUBS.find(c => c.id === context);
     if (club) {
       query += ' AND club = ?';
@@ -318,4 +327,55 @@ function getContexts(req, res) {
   res.json({ contexts });
 }
 
-module.exports = { getRandomPlayer, getPlayers, getPlayerById, getRanking, getContexts };
+function getRecentMatches(req, res) {
+  // Trouver la dernière journée avec au moins un match FINISHED
+  const latest = queryOne(
+    `SELECT MAX(matchday) as md FROM matches WHERE status = 'FINISHED' AND season = ?`,
+    [CURRENT_SEASON]
+  );
+  const currentMd = latest?.md || 1;
+
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const dow = now.getDay(); // 0=Dim, 1=Lun, ..., 6=Sam
+
+  // Vérifier si le dernier match terminé date de plus de 2 jours
+  const latestMatch = queryOne(
+    `SELECT match_date FROM matches WHERE status = 'FINISHED' AND season = ? ORDER BY match_date DESC LIMIT 1`,
+    [CURRENT_SEASON]
+  );
+  const daysSinceLastMatch = latestMatch
+    ? (now - new Date(latestMatch.match_date)) / (1000 * 60 * 60 * 24)
+    : 999;
+
+  let displayMd = currentMd;
+
+  // À partir de mercredi, si pas de match récent, afficher la prochaine journée
+  if (daysSinceLastMatch > 2 && dow >= 3) {
+    const nextMdExists = queryOne(
+      `SELECT id FROM matches WHERE matchday = ? AND season = ?`,
+      [currentMd + 1, CURRENT_SEASON]
+    );
+    if (nextMdExists) {
+      displayMd = currentMd + 1;
+    }
+  }
+
+  // Récupérer tous les matchs de la journée affichée
+  const matches = queryAll(
+    `SELECT * FROM matches WHERE matchday = ? AND season = ? ORDER BY match_date`,
+    [displayMd, CURRENT_SEASON]
+  );
+
+  // Tri : matchs du jour en premier, puis par date
+  matches.sort((a, b) => {
+    const aToday = a.match_date.startsWith(today) ? 1 : 0;
+    const bToday = b.match_date.startsWith(today) ? 1 : 0;
+    if (aToday !== bToday) return bToday - aToday;
+    return new Date(a.match_date) - new Date(b.match_date);
+  });
+
+  res.json({ matches, matchday: displayMd });
+}
+
+module.exports = { getRandomPlayer, getPlayers, getPlayerById, getRanking, getContexts, getRecentMatches };

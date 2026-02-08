@@ -6,8 +6,10 @@ const {
   getPlayerById,
   getRanking,
   getContexts,
+  getRecentMatches,
 } = require('../controllers/playersController');
 
+router.get('/matches/recent', getRecentMatches);
 router.get('/players/random', getRandomPlayer);
 router.get('/players', getPlayers);
 router.get('/players/:id', getPlayerById);

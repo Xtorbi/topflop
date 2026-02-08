@@ -133,6 +133,25 @@ async function initDb() {
   }
   db.run(`CREATE INDEX IF NOT EXISTS idx_votes_ip ON votes(player_id, voter_ip)`);
 
+  // Table matches : stocke les résultats de matchs récupérés par le cron
+  db.run(`
+    CREATE TABLE IF NOT EXISTS matches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      football_data_id INTEGER UNIQUE,
+      home_club TEXT NOT NULL,
+      away_club TEXT NOT NULL,
+      home_score INTEGER,
+      away_score INTEGER,
+      match_date TEXT NOT NULL,
+      matchday INTEGER,
+      status TEXT DEFAULT 'FINISHED',
+      season TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(match_date DESC)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_matches_season ON matches(season)`);
+
   saveDb();
   return db;
 }

@@ -69,4 +69,25 @@ export const CLUB_DISPLAY_NAMES = {
 
 export const getClubDisplayName = (name) => CLUB_DISPLAY_NAMES[name] || name;
 
+// Helpers mode match
+export const isMatchMode = (mode) => mode?.startsWith('match:');
+
+export function parseMatchMode(mode) {
+  if (!isMatchMode(mode)) return null;
+  const parts = mode.split(':');
+  const homeClub = CLUBS.find(c => c.id === parts[1]);
+  const awayClub = CLUBS.find(c => c.id === parts[2]);
+  return homeClub && awayClub ? { homeClub, awayClub } : null;
+}
+
+// Lookup nom BDD → club id
+export function getClubIdFromName(clubName) {
+  if (!clubName) return null;
+  const id = CLUB_ALIASES[clubName];
+  if (id) return id;
+  // Fallback: chercher dans CLUBS par name
+  const club = CLUBS.find(c => c.name === clubName);
+  return club ? club.id : null;
+}
+
 export default CLUBS;

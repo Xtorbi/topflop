@@ -43,3 +43,9 @@ export async function fetchContexts() {
   if (!res.ok) throw new Error('Erreur chargement contextes');
   return res.json();
 }
+
+export async function fetchRecentMatches() {
+  const res = await fetch(`${API_BASE}/matches/recent`);
+  if (!res.ok) throw new Error('Erreur chargement matchs');
+  return res.json();
+}

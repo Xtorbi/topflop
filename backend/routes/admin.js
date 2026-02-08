@@ -106,13 +106,14 @@ router.get('/update-matches', async (req, res) => {
   try {
     logs.push(`Starting update at ${now.toISOString()}`);
 
-    // Récupérer les matchs des 7 derniers jours (marge large pour ne rien rater)
+    // Récupérer les matchs des 7 derniers jours + 10 prochains jours (inclut journée suivante)
     const dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dateFromStr = dateFrom.toISOString().split('T')[0];
-    const dateToStr = now.toISOString().split('T')[0];
+    const dateTo = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+    const dateToStr = dateTo.toISOString().split('T')[0];
 
-    // Appel API Football-Data.org - Ligue 1 (FL1)
-    const url = `https://api.football-data.org/v4/competitions/FL1/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}&status=FINISHED`;
+    // Appel API Football-Data.org - Ligue 1 (FL1) - tous statuts (FINISHED + SCHEDULED + TIMED)
+    const url = `https://api.football-data.org/v4/competitions/FL1/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`;
     logs.push(`Fetching: ${url}`);
 
     const response = await fetch(url, {
@@ -141,21 +142,39 @@ router.get('/update-matches', async (req, res) => {
       const awayTeam = match.awayTeam?.name;
       const matchDate = match.utcDate; // ISO format
 
-      logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate}`);
+      logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate} (${match.status})`);
 
       // Mettre à jour les joueurs des deux équipes
-      for (const teamName of [homeTeam, awayTeam]) {
-        const clubName = findClubName(teamName);
+      const homeClubName = findClubName(homeTeam);
+      const awayClubName = findClubName(awayTeam);
 
-        if (clubName) {
-          runSql(
-            `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
-            [matchDate, clubName, CURRENT_SEASON]
-          );
-          updatedClubs.push({ club: clubName, matchDate, apiName: teamName });
-        } else if (teamName) {
-          unmatchedTeams.push(teamName);
+      // Seuls les matchs terminés mettent à jour last_match_date
+      if (match.status === 'FINISHED') {
+        for (const [teamName, clubName] of [[homeTeam, homeClubName], [awayTeam, awayClubName]]) {
+          if (clubName) {
+            runSql(
+              `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
+              [matchDate, clubName, CURRENT_SEASON]
+            );
+            updatedClubs.push({ club: clubName, matchDate, apiName: teamName });
+          } else if (teamName) {
+            unmatchedTeams.push(teamName);
+          }
         }
+      } else {
+        if (!homeClubName && homeTeam) unmatchedTeams.push(homeTeam);
+        if (!awayClubName && awayTeam) unmatchedTeams.push(awayTeam);
+      }
+
+      // Persister le match en BDD
+      if (homeClubName && awayClubName) {
+        const homeScore = match.score?.fullTime?.home ?? null;
+        const awayScore = match.score?.fullTime?.away ?? null;
+        runSql(
+          `INSERT OR REPLACE INTO matches (football_data_id, home_club, away_club, home_score, away_score, match_date, matchday, status, season)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [match.id, homeClubName, awayClubName, homeScore, awayScore, matchDate, match.matchday || null, match.status || 'FINISHED', CURRENT_SEASON]
+        );
       }
     }
 

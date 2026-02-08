@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMode } from '../contexts/ModeContext';
-import CLUBS, { getClubLogo } from '../config/clubs';
+import CLUBS, { getClubLogo, isMatchMode, parseMatchMode } from '../config/clubs';
 
 function ClubSelector() {
   const { mode, setMode } = useMode();
@@ -22,6 +22,7 @@ function ClubSelector() {
 
   const activeClub = CLUBS.find(c => c.id === mode);
   const isLigue1 = mode === 'ligue1';
+  const matchData = isMatchMode(mode) ? parseMatchMode(mode) : null;
 
   const handleSelect = (value) => {
     setMode(value);
@@ -40,6 +41,22 @@ function ClubSelector() {
       >
         {isLigue1 ? (
           <span className="text-white">Toute la L1</span>
+        ) : matchData ? (
+          <>
+            <img
+              src={getClubLogo(matchData.homeClub.tmId)}
+              alt=""
+              className="w-5 h-5 object-contain"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <span className="text-white/50 text-xs">vs</span>
+            <img
+              src={getClubLogo(matchData.awayClub.tmId)}
+              alt=""
+              className="w-5 h-5 object-contain"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </>
         ) : (
           <>
             <img

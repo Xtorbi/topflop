@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMode } from '../contexts/ModeContext';
 import ClubGrid from '../components/ClubGrid';
+import MatchGrid from '../components/MatchGrid';
 import AdBanner from '../components/AdBanner';
 
 function Home() {
@@ -96,6 +97,11 @@ function Home() {
               Voir le classement
             </Link>
           </div>
+        </div>
+
+        {/* Matchs récents */}
+        <div className="mb-8">
+          <MatchGrid />
         </div>
 
         {/* Séparateur */}
