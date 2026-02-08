@@ -16,6 +16,86 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 8 fevrier 2026 (soir) - Vote par match
+
+**3e mode de vote : par match** :
+- En plus de "Toute la L1" et "par club", on peut voter sur un match specifique
+- L'utilisateur clique sur une affiche (ex: Nice 0-0 Monaco) et vote sur les joueurs des 2 clubs
+- Mode context : `match:clubId1:clubId2` (ex: `match:nice:monaco`)
+
+**Table `matches` en BDD** :
+- Colonnes : football_data_id (UNIQUE), home_club, away_club, home_score, away_score, match_date, matchday, status, season
+- Index sur match_date DESC et season
+- Migration auto dans `initDb()`
+- Fichier : `backend/models/database.js`
+
+**Cron etendu (FINISHED + SCHEDULED)** :
+- Le cron recupere maintenant tous les matchs (pas seulement FINISHED)
+- Plage : 7 jours passe + 10 jours futur
+- Seuls les matchs FINISHED mettent a jour `last_match_date` des joueurs
+- Tous les matchs sont persistes en BDD (INSERT OR REPLACE sur football_data_id)
+- Fichier : `backend/routes/admin.js`
+
+**Endpoint `GET /api/matches/recent`** :
+- Selection intelligente de la journee :
+  - Affiche la journee en cours (matchs du jour en priorite)
+  - A partir de mercredi (si dernier match > 2 jours), bascule sur la prochaine journee
+- Tri : matchs du jour en premier, puis par date chronologique
+- Retourne `{ matches, matchday }`
+- Fichier : `backend/controllers/playersController.js` + `backend/routes/players.js`
+
+**Mode match dans `getRandomPlayer`** :
+- Si context = `match:clubId1:clubId2` → `WHERE club IN (club1.name, club2.name)`
+- Fichier : `backend/controllers/playersController.js`
+
+**Carrousel de matchs (MatchGrid.jsx)** :
+- Nouveau composant sur la Home entre CTA et grille clubs
+- Titre "Journee X" + fleches de navigation (desktop)
+- Cartes match : logos + noms courts + score (FINISHED) ou heure (TIMED/SCHEDULED)
+- Matchs du jour surlignés (ring vert + date "Aujourd'hui" en vert)
+- Scroll horizontal avec snap points sur mobile, scrollbar masquee
+- Se masque automatiquement si aucun match disponible
+- Clic → `setMode('match:homeId:awayId')` + navigate('/vote')
+- Fichier : `frontend/src/components/MatchGrid.jsx`
+
+**ClubSelector mode match** :
+- Le pill affiche les 2 logos avec "vs" entre eux quand mode match actif
+- Selectionner "Toute la L1" ou un club dans le dropdown sort du mode match
+- Fichier : `frontend/src/components/ClubSelector.jsx`
+
+**Vote page : banniere contexte match** :
+- Si mode match, affiche `[logo] Club1 vs Club2 [logo]` au-dessus de la carte
+- Fichier : `frontend/src/pages/Vote.jsx`
+
+**Helpers frontend** :
+- `isMatchMode(mode)` : detecte si le mode est un match
+- `parseMatchMode(mode)` : extrait les 2 objets club
+- `getClubIdFromName(clubName)` : lookup nom BDD → club id
+- `fetchRecentMatches()` : appel API /matches/recent
+- Fichiers : `frontend/src/config/clubs.js`, `frontend/src/utils/api.js`
+
+**CSS** :
+- Utilitaire `.scrollbar-hide` pour masquer la scrollbar du carrousel
+- Fichier : `frontend/src/index.css`
+
+**Fichiers crees** :
+- `frontend/src/components/MatchGrid.jsx`
+
+**Fichiers modifies** :
+- `backend/models/database.js` : table matches
+- `backend/routes/admin.js` : cron etendu + persist matches
+- `backend/controllers/playersController.js` : getRecentMatches + match mode
+- `backend/routes/players.js` : route /matches/recent
+- `frontend/src/utils/api.js` : fetchRecentMatches
+- `frontend/src/config/clubs.js` : helpers mode match
+- `frontend/src/components/ClubSelector.jsx` : affichage mode match
+- `frontend/src/pages/Home.jsx` : integration MatchGrid
+- `frontend/src/pages/Vote.jsx` : banniere contexte match
+- `frontend/src/index.css` : scrollbar-hide
+- `backend/database/ligue1.db` : 23 matchs persistes (J20-J22)
+
+---
+
 ### Session du 8 fevrier 2026 - Vote optimiste + Cron blindé
 
 **Fix double-clic vote** :
@@ -678,7 +758,8 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 | RankingTable | `src/components/RankingTable.jsx` | OK | Tableau classement avec rang, drapeau, nom, club, score + pubs inline |
 | AdBanner | `src/components/AdBanner.jsx` | OK | Banner pub reutilisable (4 formats, mode dev) |
 | AdInterstitial | `src/components/AdInterstitial.jsx` | OK | Interstitiel plein ecran avec countdown |
-| ModeContext | `src/contexts/ModeContext.jsx` | OK | Gestion mode (L1/club) + compteur votes en localStorage |
+| MatchGrid | `src/components/MatchGrid.jsx` | OK | Carrousel matchs recents (score/heure, fleches, snap mobile) |
+| ModeContext | `src/contexts/ModeContext.jsx` | OK | Gestion mode (L1/club/match) + compteur votes en localStorage |
 | API utils | `src/utils/api.js` | OK | Fonctions fetch pour l'API |
 
 **Configuration Tailwind** : Couleurs custom (fv-blue, fv-red, fv-gold, fv-bg), fonts (Inter, Montserrat)
@@ -872,6 +953,7 @@ Billboard/
 | GET | /api/ranking | Classement avec filtres (club, position, period, nationality, search) |
 | GET | /api/contexts | Liste des modes (L1 + 18 clubs) |
 | POST | /api/vote | Enregistrer un vote |
+| GET | /api/matches/recent | Matchs de la journee en cours (smart matchday) |
 | GET | /api/health | Health check |
 | GET | /api/admin/update-matches | Met a jour last_match_date (cron, cle requise) |
 | GET | /api/admin/health | Health check admin |
