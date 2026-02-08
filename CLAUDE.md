@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 7 fevrier 2026
+**Derniere mise a jour** : 8 fevrier 2026
 
 ---
 
@@ -15,6 +15,41 @@
 - **Frontend** : https://frontend-xtorbis-projects.vercel.app (futur: topflop.fr)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 8 fevrier 2026 - Vote optimiste + Cron blindé
+
+**Fix double-clic vote** :
+- Bug : `handleVote` attendait la reponse API (`await submitVote()`) avant de lancer le timer d'animation
+- Temps de blocage = latence API (500ms-2s sur Render free) + 250ms animation
+- Le user voyait la nouvelle carte mais les boutons restaient disabled → devait cliquer 2 fois
+- Fix : update optimiste, `submitVote()` en fire-and-forget, UI avance en 250ms fixe
+- Fichier : `frontend/src/pages/Vote.jsx`
+
+**Cron matches blinde** :
+- Lookback etendu de 3 jours a 7 jours (plus de matchs rates si le cron saute un week-end)
+- Nouveau endpoint `/api/admin/cron-status?key=...` pour monitoring :
+  - Dernier resultat du cron (succes/erreur)
+  - Nombre de joueurs avec/sans last_match_date
+  - Liste des clubs avec leur dernier match
+- Logs `[CRON]` dans la console Render (succes, erreur, tentative non autorisee)
+- Fichier : `backend/routes/admin.js`
+
+**Keep-alive Render** :
+- Self-ping `/api/health` toutes les 14 minutes (Render sleep apres 15 min d'inactivite)
+- Active uniquement en prod (detecte `RENDER_EXTERNAL_URL`)
+- Fichier : `backend/server.js`
+
+**BDD mise a jour** :
+- `last_match_date` renseigne pour 395/481 joueurs (10 matchs detectes sur 7 jours)
+- 3 clubs sans match cette semaine : OM, Le Havre, Paris FC
+
+**Fichiers modifies** :
+- `frontend/src/pages/Vote.jsx` : vote optimiste (plus d'await)
+- `backend/routes/admin.js` : lookback 7j, cron-status, logs
+- `backend/server.js` : keep-alive Render
+- `backend/database/ligue1.db` : last_match_date mis a jour
+
+---
 
 ### Session du 7 fevrier 2026 - Logo, AdSense, Algo fix
 
