@@ -45,7 +45,7 @@ function Ranking() {
   }, [clubFilter, positionFilter, periodFilter, frenchOnly, search]);
 
   return (
-    <main className="min-h-screen bg-vibes">
+    <main className="min-h-screen bg-vibes pt-14">
       <div className="container mx-auto px-4 py-6 max-w-4xl relative z-10">
       {/* Banner pub en haut */}
       <div className="mb-4">
@@ -53,83 +53,89 @@ function Ranking() {
         <AdBanner slot="RANKING_TOP_SLOT" format="banner" className="flex sm:hidden" />
       </div>
       {/* Filtres : Club, Position, Période, Français */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 animate-fade-in-up">
-        {/* Club dropdown */}
-        <select
-          value={clubFilter}
-          onChange={(e) => setClubFilter(e.target.value)}
-          className="pl-3 pr-8 py-2 w-[145px] rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
-                     bg-fv-navy border border-white/10 text-white appearance-none truncate
-                     focus:outline-none focus:border-fv-green/50
-                     [&>option]:bg-fv-navy [&>option]:text-white"
-          style={{
-            colorScheme: 'dark',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 0.4rem center',
-            backgroundSize: '1rem'
-          }}
-        >
-          <option value="">Tous les clubs</option>
-          {CLUB_NAMES.map((name) => (
-            <option key={name} value={name}>{getClubDisplayName(name)}</option>
-          ))}
-        </select>
-
-        {/* Position dropdown */}
-        <select
-          value={positionFilter}
-          onChange={(e) => setPositionFilter(e.target.value)}
-          className="pl-3 pr-8 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
-                     bg-fv-navy border border-white/10 text-white appearance-none
-                     focus:outline-none focus:border-fv-green/50
-                     [&>option]:bg-fv-navy [&>option]:text-white"
-          style={{
-            colorScheme: 'dark',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 0.4rem center',
-            backgroundSize: '1rem'
-          }}
-        >
-          <option value="Tous">Tous les postes</option>
-          <option value="Gardien">Gardien</option>
-          <option value="Defenseur">Défenseur</option>
-          <option value="Milieu">Milieu</option>
-          <option value="Attaquant">Attaquant</option>
-        </select>
-
-        {/* Période */}
-        {PERIODS.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPeriodFilter(p.id)}
-            className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
-              periodFilter === p.id
-                ? 'bg-fv-green/20 text-fv-green border border-fv-green/30'
-                : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/70'
-            }`}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-4 animate-fade-in-up">
+        {/* Ligne 1 mobile : dropdowns côte à côte */}
+        <div className="flex gap-2 sm:contents">
+          {/* Club dropdown */}
+          <select
+            value={clubFilter}
+            onChange={(e) => setClubFilter(e.target.value)}
+            className="pl-3 pr-8 py-2 flex-1 min-w-0 sm:flex-none sm:w-[145px] rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
+                       bg-fv-navy border border-white/10 text-white appearance-none truncate
+                       focus:outline-none focus:border-fv-green/50
+                       [&>option]:bg-fv-navy [&>option]:text-white"
+            style={{
+              colorScheme: 'dark',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.4rem center',
+              backgroundSize: '1rem'
+            }}
           >
-            {p.label}
-          </button>
-        ))}
+            <option value="">Tous les clubs</option>
+            {CLUB_NAMES.map((name) => (
+              <option key={name} value={name}>{getClubDisplayName(name)}</option>
+            ))}
+          </select>
 
-        {/* Toggle Français - iOS style */}
-        <label className="flex items-center gap-2 cursor-pointer select-none ml-auto">
-          <span className="text-sm text-white/60">Joueurs FR</span>
-          <div
-            onClick={() => setFrenchOnly(!frenchOnly)}
-            className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-              frenchOnly ? 'bg-fv-green' : 'bg-white/20'
-            }`}
+          {/* Position dropdown */}
+          <select
+            value={positionFilter}
+            onChange={(e) => setPositionFilter(e.target.value)}
+            className="pl-3 pr-8 py-2 flex-1 min-w-0 sm:flex-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
+                       bg-fv-navy border border-white/10 text-white appearance-none
+                       focus:outline-none focus:border-fv-green/50
+                       [&>option]:bg-fv-navy [&>option]:text-white"
+            style={{
+              colorScheme: 'dark',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.4rem center',
+              backgroundSize: '1rem'
+            }}
           >
-            <div
-              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                frenchOnly ? 'translate-x-5' : 'translate-x-0'
+            <option value="Tous">Tous les postes</option>
+            <option value="Gardien">Gardien</option>
+            <option value="Defenseur">Défenseur</option>
+            <option value="Milieu">Milieu</option>
+            <option value="Attaquant">Attaquant</option>
+          </select>
+        </div>
+
+        {/* Ligne 2 mobile : période + toggle */}
+        <div className="flex items-center gap-1 sm:gap-2 sm:contents flex-wrap">
+          {/* Période */}
+          {PERIODS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriodFilter(p.id)}
+              className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                periodFilter === p.id
+                  ? 'bg-fv-green/20 text-fv-green border border-fv-green/30'
+                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/70'
               }`}
-            />
-          </div>
-        </label>
+            >
+              {p.label}
+            </button>
+          ))}
+
+          {/* Toggle Français - iOS style */}
+          <label className="flex items-center gap-2 cursor-pointer select-none ml-auto">
+            <span className="text-sm text-white/60">Joueurs FR</span>
+            <div
+              onClick={() => setFrenchOnly(!frenchOnly)}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                frenchOnly ? 'bg-fv-green' : 'bg-white/20'
+              }`}
+            >
+              <div
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                  frenchOnly ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* Ligne 4: Recherche */}

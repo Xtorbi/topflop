@@ -92,7 +92,7 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteCount =
           </span>
           {voteCount !== null && (
             <span className="text-white/50 text-xs">
-              {voteCount} {voteCount <= 1 ? 'vote reçu' : 'votes reçus'}
+              {voteCount} vote{voteCount > 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -128,19 +128,19 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteCount =
 
         {/* Stats tableau 2 colonnes */}
         <div className="grid grid-cols-2 border-t border-fv-navy">
-          <div className="flex justify-between items-center px-4 py-2 border-r border-b border-fv-navy">
+          <div className="flex justify-between items-center px-3 py-2 border-r border-b border-fv-navy">
             <span className="text-white/50 text-xs">Matchs</span>
             <span className="text-white font-bold text-lg">{player.matches_played || '-'}</span>
           </div>
-          <div className="flex justify-between items-center px-4 py-2 border-b border-fv-navy">
+          <div className="flex justify-between items-center px-3 py-2 border-b border-fv-navy">
             <span className="text-white/50 text-xs">{isGoalkeeper ? 'C. sheets' : 'Buts'}</span>
             <span className="text-white font-bold text-lg">{isGoalkeeper ? (player.clean_sheets || '-') : (player.goals || '-')}</span>
           </div>
-          <div className="flex justify-between items-center px-4 py-2 border-r border-fv-navy">
+          <div className="flex justify-between items-center px-3 py-2 border-r border-fv-navy">
             <span className="text-white/50 text-xs">Âge</span>
             <span className="text-white font-bold text-lg">{player.age || '-'}</span>
           </div>
-          <div className="flex justify-between items-center px-4 py-2">
+          <div className="flex justify-between items-center px-3 py-2">
             <span className="text-white/50 text-xs">{isGoalkeeper ? 'Arrêts' : 'Passes'}</span>
             <span className="text-white font-bold text-lg">{isGoalkeeper ? (player.saves || '-') : (player.assists || '-')}</span>
           </div>

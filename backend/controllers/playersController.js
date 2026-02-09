@@ -336,7 +336,6 @@ function getRecentMatches(req, res) {
   const currentMd = latest?.md || 1;
 
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
   const dow = now.getDay(); // 0=Dim, 1=Lun, ..., 6=Sam
 
   // Vérifier si le dernier match terminé date de plus de 2 jours
@@ -367,13 +366,22 @@ function getRecentMatches(req, res) {
     [displayMd, CURRENT_SEASON]
   );
 
-  // Tri : matchs du jour en premier, puis par date
-  matches.sort((a, b) => {
-    const aToday = a.match_date.startsWith(today) ? 1 : 0;
-    const bToday = b.match_date.startsWith(today) ? 1 : 0;
-    if (aToday !== bToday) return bToday - aToday;
-    return new Date(a.match_date) - new Date(b.match_date);
-  });
+  // Tri intelligent selon la progression dans la journée
+  // < 2 jours calendaires depuis le 1er match → chrono (anticipation)
+  // >= 2 jours → reverse chrono (récap, matchs récents d'abord)
+  if (matches.length > 0) {
+    const firstMatchDate = new Date(matches[0].match_date); // matches triés par match_date ASC
+    firstMatchDate.setHours(0, 0, 0, 0);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const calendarDays = Math.floor((todayStart - firstMatchDate) / (1000 * 60 * 60 * 24));
+
+    if (calendarDays >= 2) {
+      // Dimanche+ : reverse chrono (récap, matchs les plus récents d'abord)
+      matches.sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
+    }
+    // Sinon : garder l'ordre chrono de la requête SQL (ORDER BY match_date ASC)
+  }
 
   res.json({ matches, matchday: displayMd });
 }

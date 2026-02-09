@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { ModeProvider } from './contexts/ModeContext';
 import Header from './components/Header';
@@ -12,12 +13,15 @@ import Contact from './pages/Contact';
 
 function AppContent() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
   const isVotePage = location.pathname === '/vote';
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#0f1629]">
-      {!isHomePage && <Header />}
+    <div className="min-h-screen flex flex-col bg-[#0f1629] overflow-x-hidden">
+      <Header />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />

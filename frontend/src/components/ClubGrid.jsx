@@ -12,7 +12,7 @@ function ClubGrid() {
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
       {CLUBS.map((club, index) => (
         <button
           key={club.id}
@@ -21,7 +21,7 @@ function ClubGrid() {
             animationDelay: `${index * 25}ms`,
             animationFillMode: 'backwards',
           }}
-          className="flex flex-col items-center justify-center gap-2 p-4
+          className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4
                      bg-white/10 backdrop-blur-sm rounded-2xl
                      hover:bg-white/15
                      hover:scale-105 active:scale-95
