@@ -6,7 +6,11 @@ const { CURRENT_SEASON } = require('../config/clubs');
 
 // Clés secrètes
 const ADMIN_KEY = process.env.ADMIN_KEY || 'topflop-admin-2026';
-const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || 'c3778e56a9194c8cb10b0ed617c86492';
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+
+if (!FOOTBALL_DATA_API_KEY) {
+  console.warn('[ADMIN] FOOTBALL_DATA_API_KEY not set — cron will fail');
+}
 
 // Mapping Football-Data.org -> nom en BDD
 const FOOTBALLDATA_TO_DB = {
