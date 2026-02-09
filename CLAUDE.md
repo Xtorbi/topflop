@@ -12,7 +12,7 @@
 
 ### URLs de production
 
-- **Frontend** : https://frontend-xtorbis-projects.vercel.app (futur: topflop.fr)
+- **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
@@ -38,6 +38,19 @@
 - `<CookieBanner />` rendu juste avant la fermeture du div principal
 - Visible sur toutes les pages (y compris Vote)
 
+**Responsive mobile fixes** :
+- Page Vote : `h-dvh` avec fallback `h-screen` (fix barre d'adresse mobile)
+- VoteButtons : tailles corrigees `w-14 h-14 sm:w-16 sm:h-16` (plus petit mobile, plus grand desktop)
+- CookieBanner : padding reduit sur mobile (`px-3 py-3 sm:p-4`)
+- ClubSelector dropdown : `max-w-[calc(100vw-2rem)]` pour eviter le debordement
+
+**Domaine topflop.fr** :
+- Achete sur OVH (3 ans, renouvellement fevr. 2029)
+- DNS : A record `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com.`
+- Vercel : `topflop.fr` redirige 307 vers `www.topflop.fr` (production)
+- CORS : deja ouvert (`cors()` sans restriction), pas de changement backend
+- Meta tags OG/Twitter mis a jour avec URLs absolues `https://www.topflop.fr`
+
 **Fichiers crees** :
 - `frontend/src/components/CookieBanner.jsx`
 
@@ -45,6 +58,10 @@
 - `backend/controllers/votesController.js` : check doublon avant INSERT
 - `backend/models/database.js` : nouvel index `idx_votes_ip_date`
 - `frontend/src/App.jsx` : import + rendu CookieBanner
+- `frontend/src/pages/Vote.jsx` : h-dvh
+- `frontend/src/components/VoteButtons.jsx` : tailles boutons corrigees
+- `frontend/src/components/ClubSelector.jsx` : max-w dropdown
+- `frontend/index.html` : meta tags og:url, og:image, twitter:image absolus
 
 ---
 
@@ -257,8 +274,8 @@
 
 **A faire** :
 - [x] Generer nouveau logo "TOPFLOP" (remplacer `frontend/public/logo.png`) FAIT
-- [ ] Acheter domaine topflop.fr
-- [ ] Configurer domaine dans Vercel
+- [x] Acheter domaine topflop.fr (OVH, 3 ans)
+- [x] Configurer domaine dans Vercel (DNS + redirect)
 - [ ] Mettre a jour vercel.json si rename du service Render
 
 **Logo Topflop** :
