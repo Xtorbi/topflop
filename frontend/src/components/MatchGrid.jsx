@@ -107,7 +107,7 @@ function MatchGrid() {
       {/* Header journée + flèches */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-white/80 text-sm font-bold tracking-wide">
-          Journée {matchday}
+          {matchday}<sup>ème</sup> journée
         </h3>
         <div className="hidden sm:flex gap-1">
           <button
@@ -137,7 +137,7 @@ function MatchGrid() {
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
+        className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
       >
         {matches.map(match => {
           const info = formatMatchInfo(match);
@@ -146,7 +146,7 @@ function MatchGrid() {
               key={match.id}
               onClick={() => handleMatchClick(match)}
               className={`flex-shrink-0 snap-start bg-white/10 backdrop-blur-sm rounded-2xl
-                         px-5 py-4 min-w-[190px]
+                         px-3 sm:px-5 py-3 sm:py-4 min-w-[160px] sm:min-w-[190px]
                          hover:bg-white/15 hover:scale-105 active:scale-95
                          transition-all duration-200
                          ${info.isToday ? 'ring-1 ring-fv-green/40' : ''}`}
