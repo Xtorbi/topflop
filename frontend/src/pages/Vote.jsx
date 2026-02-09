@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMode } from '../contexts/ModeContext';
 import PlayerCard from '../components/PlayerCard';
 import PlayerCardSkeleton from '../components/PlayerCardSkeleton';
@@ -20,6 +21,7 @@ const MILESTONES = {
 const AD_INTERVAL = 10;
 
 function Vote() {
+  const navigate = useNavigate();
   const { mode, voteCount, incrementVoteCount } = useMode();
   const [stack, setStack] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -28,6 +30,7 @@ function Vote() {
   const [error, setError] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showAd, setShowAd] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
 
   const votedIdsRef = useRef([]);
   const isVotingRef = useRef(false);
@@ -99,7 +102,7 @@ function Vote() {
   }, [mode]);
 
   const handleVote = (voteType) => {
-    if (stack.length === 0 || isVotingRef.current) return;
+    if (stack.length === 0 || isVotingRef.current || showMilestone) return;
     isVotingRef.current = true;
 
     const currentPlayer = stack[0];
@@ -118,6 +121,7 @@ function Vote() {
 
     if (MILESTONES[newCount]) {
       setCelebration({ trigger: Date.now(), message: MILESTONES[newCount] });
+      setShowMilestone(true);
     }
 
     // Afficher pub tous les 10 votes
@@ -158,7 +162,29 @@ function Vote() {
   const nextPlayer = stack[1];
   return (
     <main className={`h-dvh h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
-      <Confetti trigger={celebration.trigger} message={celebration.message} />
+      {showMilestone && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center pt-20">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-6 text-center max-w-xs mx-4 animate-bounce-in shadow-material-4">
+            <p className="text-2xl font-heading font-extrabold text-fv-navy">{celebration.message}</p>
+            <div className="flex gap-3 mt-5 justify-center">
+              <button onClick={() => navigate('/classement')}
+                className="px-5 py-2.5 rounded-full border border-fv-navy/30 text-fv-navy font-bold text-sm
+                           hover:bg-fv-navy/10 transition-colors">
+                Classement
+              </button>
+              <button onClick={() => setShowMilestone(false)}
+                className="px-5 py-2.5 rounded-full bg-fv-green text-fv-navy font-bold text-sm
+                           hover:bg-fv-green-dark transition-colors">
+                Continuer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <Confetti
+        trigger={celebration.trigger}
+        message={celebration.message}
+      />
       <AdInterstitial
         isOpen={showAd}
         onClose={() => setShowAd(false)}
