@@ -20,7 +20,7 @@ function VoteButtons({ onVote, disabled }) {
       <button
         onClick={() => handleClick('down')}
         disabled={disabled}
-        className={`w-16 h-16 sm:w-14 sm:h-14 ${baseClasses}
+        className={`w-14 h-14 sm:w-16 sm:h-16 ${baseClasses}
                    bg-red-500 text-white
                    hover:bg-red-600
                    ${clickedButton === 'down' ? 'animate-vote-bounce bg-red-600' : ''}`}
@@ -35,7 +35,7 @@ function VoteButtons({ onVote, disabled }) {
       <button
         onClick={() => handleClick('neutral')}
         disabled={disabled}
-        className={`w-16 h-16 sm:w-14 sm:h-14 ${baseClasses}
+        className={`w-14 h-14 sm:w-16 sm:h-16 ${baseClasses}
                    bg-white/10 border-2 border-white/20 text-white/60
                    hover:bg-white/15 hover:border-white/30 hover:text-white
                    ${clickedButton === 'neutral' ? 'animate-vote-bounce' : ''}`}
@@ -50,7 +50,7 @@ function VoteButtons({ onVote, disabled }) {
       <button
         onClick={() => handleClick('up')}
         disabled={disabled}
-        className={`w-16 h-16 sm:w-14 sm:h-14 ${baseClasses}
+        className={`w-14 h-14 sm:w-16 sm:h-16 ${baseClasses}
                    bg-fv-green text-fv-navy
                    hover:bg-fv-green-dark
                    ${clickedButton === 'up' ? 'animate-vote-bounce' : ''}`}

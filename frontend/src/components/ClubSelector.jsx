@@ -78,7 +78,7 @@ function ClubSelector() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-fv-navy-light/95 backdrop-blur rounded-xl
+        <div className="absolute top-full right-0 mt-2 w-48 max-w-[calc(100vw-2rem)] bg-fv-navy-light/95 backdrop-blur rounded-xl
                         shadow-lg border border-white/10 py-1 z-30 max-h-72 overflow-y-auto">
           {/* Option Toute la L1 */}
           <button

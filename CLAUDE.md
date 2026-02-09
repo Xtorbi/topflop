@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 8 fevrier 2026
+**Derniere mise a jour** : 9 fevrier 2026
 
 ---
 
@@ -15,6 +15,38 @@
 - **Frontend** : https://frontend-xtorbis-projects.vercel.app (futur: topflop.fr)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 9 fevrier 2026 - Anti-spam + Banniere RGPD
+
+**Anti-spam : 1 vote par joueur par IP toutes les 24h** :
+- Avant d'inserer le vote, check si l'IP a deja vote sur ce joueur dans les 24 dernieres heures
+- Si doublon : retourne `429` avec `{ error: 'already_voted' }`
+- Le vote est optimiste cote frontend → pas de changement UI (le 429 est ignore silencieusement)
+- Nouvel index `idx_votes_ip_date` sur `(player_id, voter_ip, voted_at)` pour performance
+- Fichiers : `backend/controllers/votesController.js`, `backend/models/database.js`
+
+**Banniere cookies RGPD (CookieBanner.jsx)** :
+- Banniere fixee en bas de l'ecran (`fixed bottom-0`, z-40)
+- Texte : "Ce site utilise des cookies..." + lien vers `/confidentialite`
+- Bouton "Accepter" (vert emerald) + bouton "Refuser" (bordure blanche)
+- Consent stocke dans `localStorage` : cle `fv-cookie-consent` = `"accepted"` | `"refused"`
+- Si deja repondu, la banniere ne s'affiche plus
+- Responsive : colonne sur mobile, ligne sur desktop
+- Fichier : `frontend/src/components/CookieBanner.jsx`
+
+**Integration App.jsx** :
+- `<CookieBanner />` rendu juste avant la fermeture du div principal
+- Visible sur toutes les pages (y compris Vote)
+
+**Fichiers crees** :
+- `frontend/src/components/CookieBanner.jsx`
+
+**Fichiers modifies** :
+- `backend/controllers/votesController.js` : check doublon avant INSERT
+- `backend/models/database.js` : nouvel index `idx_votes_ip_date`
+- `frontend/src/App.jsx` : import + rendu CookieBanner
+
+---
 
 ### Session du 8 fevrier 2026 (soir) - Vote par match
 
@@ -300,7 +332,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 1. ~~Remplacer `ca-pub-XXXXXXXXXXXXXXXX` par le vrai Publisher ID AdSense~~ FAIT
 2. Creer les slots dans la console AdSense et remplacer les placeholders
 3. ~~Passer `DEV_MODE = false` dans AdBanner.jsx et AdInterstitial.jsx~~ FAIT
-4. Ajouter banniere cookies RGPD (consentement pub ciblee)
+4. ~~Ajouter banniere cookies RGPD (consentement pub ciblee)~~ FAIT
 
 **Note** : Les pubs sont deployees mais invisibles jusqu'a validation du compte AdSense par Google.
 
@@ -759,6 +791,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 | AdBanner | `src/components/AdBanner.jsx` | OK | Banner pub reutilisable (4 formats, mode dev) |
 | AdInterstitial | `src/components/AdInterstitial.jsx` | OK | Interstitiel plein ecran avec countdown |
 | MatchGrid | `src/components/MatchGrid.jsx` | OK | Carrousel matchs recents (score/heure, fleches, snap mobile) |
+| CookieBanner | `src/components/CookieBanner.jsx` | OK | Banniere RGPD cookies (accept/refuse, localStorage) |
 | ModeContext | `src/contexts/ModeContext.jsx` | OK | Gestion mode (L1/club/match) + compteur votes en localStorage |
 | API utils | `src/utils/api.js` | OK | Fonctions fetch pour l'API |
 
@@ -807,10 +840,9 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 
 ### Avant Go Live (securite)
 
-- [ ] **Deplacer la cle API Football-Data.org en variable d'environnement**
-  - Actuellement en dur dans `backend/routes/admin.js`
-  - Sur Render : Settings > Environment > ajouter `FOOTBALL_DATA_API_KEY`
-  - Supprimer la valeur par defaut du code
+- [x] **Deplacer la cle API Football-Data.org en variable d'environnement** FAIT
+  - Code : commit d3212ae (lit `process.env.FOOTBALL_DATA_API_KEY`)
+  - Render : variable configuree dans Environment
 
 ### Priorite haute (pour lancer le MVP)
 
@@ -834,7 +866,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
   - [ ] Loader pendant chargement joueur suivant
 - [ ] **Anti-spam v1.1** :
   - [ ] Browser fingerprinting (FingerprintJS)
-  - [ ] 1 vote par joueur par utilisateur (localStorage + backend)
+  - [x] 1 vote par joueur par IP toutes les 24h (backend check + index)
 
 ### Priorite basse (post-MVP v1.2+)
 
@@ -1014,7 +1046,7 @@ node scripts/importTransfermarkt.js
 
 1. **Saison** : Configure pour 2025-2026, les clubs ont ete mis a jour avec les promus/relegues
 2. **Photos** : Utilise les photos de l'API (Transfermarkt ou API-Football)
-3. **Anti-spam** : Rate limiting (2s) + IP tracking (100/jour) implementes
+3. **Anti-spam** : Rate limiting (2s) + IP tracking (100/jour) + 1 vote/joueur/IP/24h
 4. **Positions** : Gardien, Defenseur, Milieu, Attaquant (en francais sans accents dans la BDD)
 5. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
 

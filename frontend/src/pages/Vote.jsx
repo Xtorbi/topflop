@@ -157,7 +157,7 @@ function Vote() {
   const currentPlayer = stack[0];
   const nextPlayer = stack[1];
   return (
-    <main className={`h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
+    <main className={`h-dvh h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
       <Confetti trigger={celebration.trigger} message={celebration.message} />
       <AdInterstitial
         isOpen={showAd}
