@@ -21,6 +21,15 @@ function handleVote(req, res) {
     return res.status(404).json({ error: 'Joueur non trouve' });
   }
 
+  // Anti-spam : 1 vote par joueur par IP toutes les 24h
+  const existing = queryOne(
+    `SELECT id FROM votes WHERE player_id = ? AND voter_ip = ? AND voted_at > datetime('now', '-24 hours')`,
+    [player_id, voterIp]
+  );
+  if (existing) {
+    return res.status(429).json({ error: 'already_voted', message: 'Tu as déjà voté pour ce joueur aujourd\'hui' });
+  }
+
   // Get old rank
   const oldRankRow = queryOne(`
     SELECT COUNT(*) + 1 as rank FROM players

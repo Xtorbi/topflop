@@ -10,6 +10,7 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import CookieBanner from './components/CookieBanner';
 
 function AppContent() {
   const location = useLocation();
@@ -34,6 +35,7 @@ function AppContent() {
         </Routes>
       </main>
       {!isVotePage && <Footer />}
+      <CookieBanner />
     </div>
   );
 }

@@ -132,6 +132,7 @@ async function initDb() {
     db.run(`ALTER TABLE votes ADD COLUMN voter_ip TEXT`);
   }
   db.run(`CREATE INDEX IF NOT EXISTS idx_votes_ip ON votes(player_id, voter_ip)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_ip_date ON votes(player_id, voter_ip, voted_at)`);
 
   // Table matches : stocke les résultats de matchs récupérés par le cron
   db.run(`
