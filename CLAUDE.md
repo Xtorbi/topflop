@@ -16,6 +16,71 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 9 fevrier 2026 (nuit) - Renforcement bg-vibes
+
+**Animation de fond bg-vibes renforcee (index.css)** :
+- Opacites ondes SVG montees (~+50%) pour meilleure visibilite :
+  - Couche 1 emerald : `0.06→0.09`, indigo : `0.05→0.07`, fadeouts `0.01→0.02`
+  - Couche 2 emerald : `0.06→0.08`, fadeout `0.01→0.02`
+- Nouveau glow pulsant emerald : `radial-gradient` (6% opacite) qui pulse de 100% a 130% en 8s
+- Keyframe `vibesGlow` ajoute + desactive dans `prefers-reduced-motion`
+- Vitesse des ondes inchangee (80s/60s)
+
+**Fichiers modifies** :
+- `frontend/src/index.css` : opacites SVG, glow pulsant, reduced-motion
+
+---
+
+### Session du 9 fevrier 2026 (soir) - MiniPodium + Partage WhatsApp + Polish UI
+
+**MiniPodium Top 3 sur la Home (MiniPodium.jsx)** :
+- Nouveau composant affichant les 3 premiers du classement general
+- Layout podium : 2e a gauche, 1er au centre (plus grand), 3e a droite
+- Photo joueur (ronde, bordure emerald), badge rang, nom raccourci (J. Nom), logo club, score
+- 1er plus grand (`w-20 sm:w-24`), 2e/3e decales vers le bas (`mt-6 sm:mt-8`)
+- Lien "Voir le classement" en bas
+- Fond `bg-white/5` avec bordure `border-white/10`, coins arrondis `rounded-2xl`
+- Donnees : `fetchRanking({ limit: 3 })` au mount de Home.jsx
+- Ne s'affiche que si >= 3 joueurs disponibles
+- Fichier : `frontend/src/components/MiniPodium.jsx`
+
+**Ordre Home revu** :
+1. Hero (logo + CTA)
+2. **MiniPodium Top 3** ← remonte au-dessus du carrousel
+3. **MatchGrid carrousel** ← descend
+4. Separateur "ou vote par club" (anciennement "ou choisis ton club")
+5. ClubGrid
+6. AdBanner
+
+**Partage WhatsApp classement (ShareWhatsApp.jsx)** :
+- Bouton "Partager sur WhatsApp" sous le tableau classement
+- Partage le Top 5 avec titre adapte aux filtres actifs (club, periode, FR)
+- Format message : emoji trophee + titre + top 5 + lien www.topflop.fr/classement
+- Ouvre `wa.me/?text=...` dans un nouvel onglet
+- Style discret : `bg-white/5 border-white/10`, hover vert
+- Props : `players`, `clubFilter`, `periodFilter`, `frenchOnly`
+- Fichier : `frontend/src/components/ShareWhatsApp.jsx`
+
+**Polish UI** :
+- Header : lien "Accueil" affiche a cote du logo sur les pages non-home
+- CookieBanner : boutons `rounded-full` + couleurs brand (`bg-fv-green`, `text-fv-navy`)
+- Home tagline : "Le barometre des joueurs de Ligue 1" + sous-titre "Vote et decouvre le classement"
+- Home CTA classement : `border` au lieu de `border-2`
+- Confetti : suppression du message overlay (la modal milestone suffit)
+
+**Fichiers crees** :
+- `frontend/src/components/MiniPodium.jsx`
+- `frontend/src/components/ShareWhatsApp.jsx`
+
+**Fichiers modifies** :
+- `frontend/src/pages/Home.jsx` : MiniPodium, ordre blocs, tagline, separateur
+- `frontend/src/pages/Ranking.jsx` : integration ShareWhatsApp
+- `frontend/src/components/Header.jsx` : lien "Accueil"
+- `frontend/src/components/CookieBanner.jsx` : style boutons
+- `frontend/src/components/Confetti.jsx` : suppression message overlay
+
+---
+
 ### Session du 9 fevrier 2026 - Anti-spam + Banniere RGPD
 
 **Anti-spam : 1 vote par joueur par IP toutes les 24h** :
@@ -808,6 +873,8 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 | AdBanner | `src/components/AdBanner.jsx` | OK | Banner pub reutilisable (4 formats, mode dev) |
 | AdInterstitial | `src/components/AdInterstitial.jsx` | OK | Interstitiel plein ecran avec countdown |
 | MatchGrid | `src/components/MatchGrid.jsx` | OK | Carrousel matchs recents (score/heure, fleches, snap mobile) |
+| MiniPodium | `src/components/MiniPodium.jsx` | OK | Top 3 joueurs sur la Home (podium visuel) |
+| ShareWhatsApp | `src/components/ShareWhatsApp.jsx` | OK | Partage Top 5 classement via WhatsApp |
 | CookieBanner | `src/components/CookieBanner.jsx` | OK | Banniere RGPD cookies (accept/refuse, localStorage) |
 | ModeContext | `src/contexts/ModeContext.jsx` | OK | Gestion mode (L1/club/match) + compteur votes en localStorage |
 | API utils | `src/utils/api.js` | OK | Fonctions fetch pour l'API |
