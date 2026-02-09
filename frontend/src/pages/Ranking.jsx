@@ -3,6 +3,7 @@ import RankingTable from '../components/RankingTable';
 import { fetchRanking } from '../utils/api';
 import { CLUB_NAMES, getClubDisplayName } from '../config/clubs';
 import AdBanner from '../components/AdBanner';
+import ShareWhatsApp from '../components/ShareWhatsApp';
 
 const PERIODS = [
   { id: 'week', label: '7 jours' },
@@ -163,7 +164,10 @@ function Ranking() {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/10 border-t-fv-green" />
         </div>
       ) : (
-        <RankingTable players={players} adInterval={25} />
+        <>
+          <RankingTable players={players} adInterval={25} />
+          <ShareWhatsApp players={players} clubFilter={clubFilter} periodFilter={periodFilter} frenchOnly={frenchOnly} />
+        </>
       )}
       </div>
     </main>

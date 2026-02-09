@@ -1,12 +1,26 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMode } from '../contexts/ModeContext';
 import ClubGrid from '../components/ClubGrid';
 import MatchGrid from '../components/MatchGrid';
+import MiniPodium from '../components/MiniPodium';
 import AdBanner from '../components/AdBanner';
+import { fetchRanking } from '../utils/api';
 
 function Home() {
   const navigate = useNavigate();
   const { setMode } = useMode();
+  const [topPlayers, setTopPlayers] = useState(null);
+
+  useEffect(() => {
+    fetchRanking({ limit: 3 })
+      .then(data => {
+        if (data.players && data.players.length >= 3) {
+          setTopPlayers(data.players);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLigue1 = () => {
     setMode('ligue1');
@@ -30,10 +44,10 @@ function Home() {
 
           {/* Tagline */}
           <p className="text-white/70 text-base sm:text-xl mb-2">
-            Vote pour tes joueurs de Ligue 1 préférés
+            Le baromètre des joueurs de Ligue 1
           </p>
-          <p className="text-fv-green text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-8">
-            Saison 2025-2026
+          <p className="text-white/40 text-xs sm:text-sm mb-8">
+            Vote et découvre le classement · Saison 2025-2026
           </p>
 
           {/* CTA Buttons */}
@@ -54,13 +68,20 @@ function Home() {
             <Link
               to="/classement"
               className="text-white/70 hover:text-white font-bold text-lg
-                         px-8 py-4 rounded-full border-2 border-white/20 hover:border-white/40
+                         px-8 py-4 rounded-full border border-white/20 hover:border-white/40
                          transition-all duration-200"
             >
               Voir le classement
             </Link>
           </div>
         </div>
+
+        {/* Mini Podium Top 3 */}
+        {topPlayers && (
+          <div className="mb-8">
+            <MiniPodium players={topPlayers} />
+          </div>
+        )}
 
         {/* Matchs récents */}
         <div className="mb-8">
@@ -70,7 +91,7 @@ function Home() {
         {/* Séparateur */}
         <div className="flex items-center gap-4 mb-8">
           <div className="flex-1 h-px bg-white/10" />
-          <span className="text-white/60 text-sm font-medium">ou choisis ton club</span>
+          <span className="text-white/60 text-sm font-medium">ou vote par club</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
 

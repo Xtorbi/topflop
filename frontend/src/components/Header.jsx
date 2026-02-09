@@ -41,12 +41,17 @@ function Header() {
           : 'translate-y-0 bg-fv-navy/95 backdrop-blur-md border-b border-white/10'}`}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center max-w-4xl">
-        <Link to="/" className="group">
+        <Link to="/" className="group flex items-center gap-2">
           <img
             src="/logo.png"
             alt="Topflop"
             className="h-8 sm:h-10 group-hover:brightness-125 transition-all"
           />
+          {!isHomePage && (
+            <span className="text-white/50 group-hover:text-white text-sm font-medium transition-colors">
+              Accueil
+            </span>
+          )}
         </Link>
 
         {isVotePage ? (

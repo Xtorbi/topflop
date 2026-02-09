@@ -54,16 +54,6 @@ function Confetti({ trigger, message }) {
           }}
         />
       ))}
-
-      {/* Message de félicitations */}
-      {showMessage && message && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-white/95 backdrop-blur-sm px-8 py-4 rounded-2xl shadow-material-4
-                          animate-bounce-in text-center">
-            <p className="text-2xl font-heading font-extrabold text-fv-navy">{message}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
