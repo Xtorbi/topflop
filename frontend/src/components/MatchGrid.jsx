@@ -57,7 +57,7 @@ function MatchGrid() {
         setMatches(data.matches || []);
         setMatchday(data.matchday);
       })
-      .catch(() => {})
+      .catch(err => console.warn('MatchGrid: fetch failed', err))
       .finally(() => setLoading(false));
   }, []);
 
