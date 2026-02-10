@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { queryOne } = require('../models/database');
 
-const MAX_VOTES_PER_DAY = 200;
+const MAX_VOTES_PER_DAY = 500;
 const IP_HASH_SECRET = process.env.IP_HASH_SECRET || 'topflop-default-salt-change-me';
 
 function hashIp(ip) {
