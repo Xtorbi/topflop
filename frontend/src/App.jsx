@@ -11,6 +11,7 @@ import Terms from './pages/Terms';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import CookieBanner from './components/CookieBanner';
+import { Analytics } from '@vercel/analytics/react';
 
 function AppContent() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function AppContent() {
       </main>
       {!isVotePage && <Footer />}
       <CookieBanner />
+      <Analytics />
     </div>
   );
 }
