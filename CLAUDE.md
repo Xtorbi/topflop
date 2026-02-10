@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 10 fevrier 2026
+**Derniere mise a jour** : 10 fevrier 2026 (nuit)
 
 ---
 
@@ -15,6 +15,76 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf
+
+**3 quick wins perf/RGPD** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **AdSense conditionne au consentement cookies** | `index.html`, `AdBanner.jsx`, `AdInterstitial.jsx` |
+| 2 | **Lazy loading images** (`loading="lazy"`) | `RankingTable.jsx`, `MiniPodium.jsx` |
+| 3 | **Cache headers API** (Cache-Control public) | `backend/routes/players.js` |
+
+**AdSense + consentement** :
+- Script AdSense retire de `index.html` (chargeait meme si cookies refuses)
+- Charge dynamiquement via `document.createElement('script')` uniquement si `localStorage fv-cookie-consent === 'accepted'`
+- `loadAdSenseScript()` dans AdBanner.jsx : injecte le script une seule fois (flag `adsenseLoaded`)
+- AdBanner + AdInterstitial retournent `null` si consentement non accepte
+
+**Lazy loading** :
+- `loading="lazy"` sur drapeaux nationalites (RankingTable) et photos/logos podium (MiniPodium)
+- Carte joueur (PlayerCard/Vote) garde le chargement eager (contenu principal above-the-fold)
+
+**Cache headers** :
+- Middleware `cache(seconds)` qui pose `Cache-Control: public, max-age=N, s-maxage=N`
+- `/ranking`, `/players`, `/players/:id` : 60s
+- `/matches/recent` : 300s (5 min)
+- `/contexts` : 600s (10 min)
+- `/players/random` : pas de cache (aleatoire)
+
+**Fichiers modifies** :
+- `frontend/index.html` : script AdSense retire
+- `frontend/src/components/AdBanner.jsx` : chargement dynamique + check consentement
+- `frontend/src/components/AdInterstitial.jsx` : check consentement
+- `frontend/src/components/RankingTable.jsx` : loading="lazy" drapeaux
+- `frontend/src/components/MiniPodium.jsx` : loading="lazy" photos + logos
+- `backend/routes/players.js` : middleware cache + Cache-Control
+
+---
+
+### Session du 10 fevrier 2026 (nuit) - 5 fixes RGPD/UX/CLS
+
+**5 fixes issus de la priorisation post-audit** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **Hash IP HMAC-SHA256** : IPs hashees avant stockage BDD (conformite RGPD Art. 32) | `votesController.js`, `ipTracker.js` |
+| 2 | **Placeholder photo** : silhouette plus visible (`#4a5568` → `#9ca3af`) | `PlayerCard.jsx` |
+| 3 | **Dimensions images explicites** : `width`/`height` sur toutes les `<img>` (anti-CLS) | `PlayerCard.jsx`, `RankingTable.jsx`, `MiniPodium.jsx` |
+| 4 | **Message 0 resultats** : affiche "Aucun resultat" quand recherche classement vide | `Ranking.jsx` |
+| 5 | **Nettoyage console.log** : supprime log verbose `[MATCH FALLBACK]` dans admin.js | `admin.js` |
+
+**Hash IP - details** :
+- `crypto.createHmac('sha256', IP_HASH_SECRET).update(ip).digest('hex')` dans votesController et ipTracker
+- Env var `IP_HASH_SECRET` (64 chars hex) dans `.env` + a ajouter sur Render
+- Fallback `'topflop-default-salt-change-me'` si env var absente (dev local)
+- Impact : les anciennes IPs en clair dans `votes` ne matchent plus les nouvelles hashees → reset one-time de l'anti-spam 24h
+
+**Console.log - bilan** :
+- Seul log superflu : `[MATCH FALLBACK]` dans `findClubName()` (admin.js L86)
+- Logs gardes : startup, cron summary, erreurs, warnings secu — tous utiles pour monitoring
+
+**Fichiers modifies** :
+- `backend/controllers/votesController.js` : hash IP HMAC-SHA256
+- `backend/middleware/ipTracker.js` : hash IP HMAC-SHA256
+- `backend/routes/admin.js` : suppression console.log MATCH FALLBACK
+- `frontend/src/components/PlayerCard.jsx` : placeholder #9ca3af + width/height
+- `frontend/src/components/RankingTable.jsx` : width/height drapeaux + alt text
+- `frontend/src/components/MiniPodium.jsx` : width/height photos + logos
+- `frontend/src/pages/Ranking.jsx` : message vide "Aucun resultat"
+
+---
 
 ### Session du 10 fevrier 2026 (soir) - Audit 4 agents + Fixes secu/UX
 
@@ -40,8 +110,8 @@
 - `frontend/public/favicon.svg` + `favicon.png`
 
 **Points notes pour plus tard** (issus des audits) :
-- Hasher les IP en BDD (HMAC-SHA256) pour conformite RGPD Article 32
-- Conditionner chargement AdSense au consentement cookies
+- ~~Hasher les IP en BDD (HMAC-SHA256) pour conformite RGPD Article 32~~ FAIT
+- ~~Conditionner chargement AdSense au consentement cookies~~ FAIT
 - Monitoring erreurs (Sentry)
 - FingerprintJS anti-spam v1.1
 
@@ -1057,7 +1127,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **SQL interpolation** : supprimee dans votesController (3 requetes distinctes)
 - [x] **Middleware erreur** : catch-all + unhandledRejection
 - [x] **Deps inutilisees** : puppeteer + cheerio supprimes (-134 packages)
-- [ ] **Hash IP** (HMAC-SHA256) — conformite RGPD Article 32
+- [x] **Hash IP** (HMAC-SHA256) — conformite RGPD Article 32. Env var `IP_HASH_SECRET` a configurer sur Render
 - [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
 
 ### Priorite haute (pour lancer le MVP)
@@ -1074,10 +1144,10 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 
 - [ ] **Design** :
   - [ ] Verifier responsive mobile (tester sur telephone)
-  - [ ] Placeholder si photo joueur manquante (silhouette generique)
+  - [x] Placeholder photo joueur : silhouette gris clair (#9ca3af) sur fond sombre
 - [ ] **Infra** :
   - [x] BDD persistante (Turso libSQL cloud)
-  - [ ] Nettoyage console.log en prod
+  - [x] Nettoyage console.log en prod (1 seul log superflu supprime, reste = monitoring utile)
 
 ### Priorite basse (post-MVP v1.2+)
 
@@ -1258,11 +1328,12 @@ node scripts/importTransfermarkt.js
 
 1. **Saison** : Configure pour 2025-2026, les clubs ont ete mis a jour avec les promus/relegues
 2. **Photos** : Utilise les photos de l'API (Transfermarkt ou API-Football)
-3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD (200/jour) + 1 vote/joueur/IP/24h
+3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD hashee HMAC-SHA256 (200/jour) + 1 vote/joueur/IP/24h
 4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
-5. **Securite** : CORS restreint, admin key env-only, validation inputs, timeout fetch
+5. **Securite** : CORS restreint, admin key env-only, validation inputs, timeout fetch, helmet, rate limit global 100/min
 6. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
 7. **BDD** : Turso (libSQL cloud) en prod, fallback fichier local en dev. Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+8. **Env vars Render** : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `IP_HASH_SECRET`, `ADMIN_KEY`, `FOOTBALL_DATA_API_KEY`, `CORS_ORIGINS`
 
 ---
 
@@ -1303,3 +1374,7 @@ node scripts/importTransfermarkt.js
 | 10 fev 2026 | Migration BDD : sql.js → Turso (libSQL cloud, EU West, persistante) |
 | 10 fev 2026 | Audit 4 agents + 8 fixes : rate limit global, helmet, SQL fix, contraste, debounce |
 | 10 fev 2026 | Nouveau favicon : pouce haut emerald sur fond navy |
+| 10 fev 2026 | Hash IP HMAC-SHA256 pour conformite RGPD (plus d'IP en clair en BDD) |
+| 10 fev 2026 | Dimensions explicites sur toutes les images (anti-CLS) |
+| 10 fev 2026 | AdSense conditionne au consentement cookies (RGPD) |
+| 10 fev 2026 | Cache-Control sur API (60s ranking, 5min matchs, 10min contexts) |
