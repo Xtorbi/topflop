@@ -1,52 +1,31 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
+const { createClient } = require('@libsql/client');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '../database/ligue1.db');
+let client;
 
-let db;
-let SQL;
+function getClient() {
+  if (client) return client;
 
-async function getDb() {
-  if (db) return db;
-
-  if (!SQL) {
-    SQL = await initSqlJs();
-  }
-
-  // Load existing DB or create new
-  if (fs.existsSync(DB_PATH)) {
-    const buffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(buffer);
+  if (process.env.TURSO_DATABASE_URL) {
+    client = createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
   } else {
-    db = new SQL.Database();
+    // Fallback local dev : fichier SQLite
+    const dbPath = path.join(__dirname, '../database/ligue1.db');
+    client = createClient({
+      url: `file:${dbPath}`,
+    });
   }
 
-  return db;
+  return client;
 }
-
-function saveDb() {
-  if (!db) return;
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  fs.writeFileSync(DB_PATH, buffer);
-}
-
-// Auto-save every 30 seconds
-setInterval(() => {
-  if (db) saveDb();
-}, 30000);
-
-// Save on exit
-process.on('exit', saveDb);
-process.on('SIGINT', () => { saveDb(); process.exit(); });
-process.on('SIGTERM', () => { saveDb(); process.exit(); });
 
 async function initDb() {
-  const db = await getDb();
+  const db = getClient();
 
-  db.run(`
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS players (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       first_name TEXT NOT NULL,
@@ -80,28 +59,28 @@ async function initDb() {
     )
   `);
 
-  db.run(`CREATE INDEX IF NOT EXISTS idx_club ON players(club)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_position ON players(position)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_score ON players(score DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_total_votes ON players(total_votes DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_season ON players(source_season)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_active ON players(source_season, archived)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_club ON players(club)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_position ON players(position)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_score ON players(score DESC)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_total_votes ON players(total_votes DESC)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_season ON players(source_season)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_active ON players(source_season, archived)`);
 
   // Migration: ajouter les nouvelles colonnes si elles n'existent pas
-  const columns = db.exec("PRAGMA table_info(players)");
-  const columnNames = columns.length > 0 ? columns[0].values.map(row => row[1]) : [];
+  const columns = await db.execute("PRAGMA table_info(players)");
+  const columnNames = columns.rows.map(row => row.name);
 
   if (!columnNames.includes('last_matchday_played')) {
-    db.run(`ALTER TABLE players ADD COLUMN last_matchday_played INTEGER DEFAULT 0`);
+    await db.execute(`ALTER TABLE players ADD COLUMN last_matchday_played INTEGER DEFAULT 0`);
   }
   if (!columnNames.includes('last_match_date')) {
-    db.run(`ALTER TABLE players ADD COLUMN last_match_date TEXT`);
+    await db.execute(`ALTER TABLE players ADD COLUMN last_match_date TEXT`);
   }
 
-  db.run(`CREATE INDEX IF NOT EXISTS idx_last_matchday ON players(last_matchday_played)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_last_matchday ON players(last_matchday_played)`);
 
-  // Table pour tracker la journée actuelle de la ligue
-  db.run(`
+  // Table pour tracker la journee actuelle de la ligue
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS league_status (
       id INTEGER PRIMARY KEY CHECK(id = 1),
       current_matchday INTEGER NOT NULL DEFAULT 1,
@@ -110,7 +89,7 @@ async function initDb() {
     )
   `);
 
-  db.run(`
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS votes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       player_id INTEGER NOT NULL,
@@ -121,21 +100,21 @@ async function initDb() {
     )
   `);
 
-  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_player ON votes(player_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_context ON votes(context)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_date ON votes(voted_at)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_votes_player ON votes(player_id)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_votes_context ON votes(context)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_votes_date ON votes(voted_at)`);
 
   // Migration: ajouter colonne voter_ip si elle n'existe pas
-  const votesColumns = db.exec("PRAGMA table_info(votes)");
-  const votesColumnNames = votesColumns.length > 0 ? votesColumns[0].values.map(row => row[1]) : [];
+  const votesColumns = await db.execute("PRAGMA table_info(votes)");
+  const votesColumnNames = votesColumns.rows.map(row => row.name);
   if (!votesColumnNames.includes('voter_ip')) {
-    db.run(`ALTER TABLE votes ADD COLUMN voter_ip TEXT`);
+    await db.execute(`ALTER TABLE votes ADD COLUMN voter_ip TEXT`);
   }
-  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_ip ON votes(player_id, voter_ip)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_votes_ip_date ON votes(player_id, voter_ip, voted_at)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_votes_ip ON votes(player_id, voter_ip)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_votes_ip_date ON votes(player_id, voter_ip, voted_at)`);
 
-  // Table matches : stocke les résultats de matchs récupérés par le cron
-  db.run(`
+  // Table matches : stocke les resultats de matchs recuperes par le cron
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS matches (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       football_data_id INTEGER UNIQUE,
@@ -150,38 +129,28 @@ async function initDb() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(match_date DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_matches_season ON matches(season)`);
-
-  saveDb();
-  return db;
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(match_date DESC)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_matches_season ON matches(season)`);
 }
 
 // Helper: run a SELECT and return all rows as array of objects
-function queryAll(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows;
+async function queryAll(sql, params = []) {
+  const db = getClient();
+  const result = await db.execute({ sql, args: params });
+  return result.rows;
 }
 
 // Helper: run a SELECT and return first row as object (or null)
-function queryOne(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const result = stmt.step() ? stmt.getAsObject() : null;
-  stmt.free();
-  return result;
+async function queryOne(sql, params = []) {
+  const db = getClient();
+  const result = await db.execute({ sql, args: params });
+  return result.rows[0] || null;
 }
 
 // Helper: run INSERT/UPDATE/DELETE
-function runSql(sql, params = []) {
-  db.run(sql, params);
-  saveDb();
+async function runSql(sql, params = []) {
+  const db = getClient();
+  await db.execute({ sql, args: params });
 }
 
-module.exports = { getDb, initDb, saveDb, queryAll, queryOne, runSql };
+module.exports = { initDb, queryAll, queryOne, runSql };

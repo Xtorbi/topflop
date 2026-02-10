@@ -149,7 +149,7 @@ async function updateMatches() {
     if (match.status === 'FINISHED') {
       for (const [teamName, clubName] of [[homeTeam, homeClubName], [awayTeam, awayClubName]]) {
         if (clubName) {
-          runSql(
+          await runSql(
             `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
             [matchDate, clubName, CURRENT_SEASON]
           );
@@ -167,7 +167,7 @@ async function updateMatches() {
     if (homeClubName && awayClubName) {
       const homeScore = match.score?.fullTime?.home ?? null;
       const awayScore = match.score?.fullTime?.away ?? null;
-      runSql(
+      await runSql(
         `INSERT OR REPLACE INTO matches (football_data_id, home_club, away_club, home_score, away_score, match_date, matchday, status, season)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [match.id, homeClubName, awayClubName, homeScore, awayScore, matchDate, match.matchday || null, match.status || 'FINISHED', CURRENT_SEASON]
@@ -225,7 +225,7 @@ router.get('/health', (req, res) => {
 /**
  * Status du cron : dernier résultat + état des last_match_date en BDD
  */
-router.get('/cron-status', (req, res) => {
+router.get('/cron-status', async (req, res) => {
   const { key } = req.query;
   if (key !== ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -234,17 +234,17 @@ router.get('/cron-status', (req, res) => {
   const { queryAll, queryOne } = require('../models/database');
 
   // Combien de joueurs ont un last_match_date ?
-  const withDate = queryOne(
+  const withDate = await queryOne(
     `SELECT COUNT(*) as count FROM players WHERE last_match_date IS NOT NULL AND source_season = ?`,
     [CURRENT_SEASON]
   );
-  const withoutDate = queryOne(
+  const withoutDate = await queryOne(
     `SELECT COUNT(*) as count FROM players WHERE last_match_date IS NULL AND source_season = ?`,
     [CURRENT_SEASON]
   );
 
   // Clubs avec le match le plus récent
-  const recentClubs = queryAll(
+  const recentClubs = await queryAll(
     `SELECT club, MAX(last_match_date) as last_match
      FROM players WHERE source_season = ? AND last_match_date IS NOT NULL
      GROUP BY club ORDER BY last_match DESC`,

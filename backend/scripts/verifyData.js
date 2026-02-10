@@ -9,7 +9,7 @@ async function verify() {
   const stars = ['Dembélé', 'Barcola', 'Greenwood', 'Lacazette', 'Embolo'];
 
   for (const name of stars) {
-    const players = queryAll(`
+    const players = await queryAll(`
       SELECT name, club, position, matches_played, goals, assists, photo_url
       FROM players
       WHERE name LIKE ?
@@ -26,9 +26,9 @@ async function verify() {
   }
 
   // Stats globales
-  const total = queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026'`);
-  const withPhoto = queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026' AND photo_url != ''`);
-  const withGoals = queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026' AND goals > 0`);
+  const total = await queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026'`);
+  const withPhoto = await queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026' AND photo_url != ''`);
+  const withGoals = await queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = '2025-2026' AND goals > 0`);
 
   console.log('=== Stats globales ===');
   console.log(`Total joueurs: ${total[0].count}`);
@@ -37,7 +37,7 @@ async function verify() {
 
   // Top buteurs
   console.log('\n=== Top 10 buteurs ===');
-  const topScorers = queryAll(`
+  const topScorers = await queryAll(`
     SELECT name, club, goals, assists
     FROM players
     WHERE source_season = '2025-2026'

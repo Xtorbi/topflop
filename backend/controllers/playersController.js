@@ -12,12 +12,12 @@ function sanitizeInt(val, defaultVal, min = 0, max = MAX_LIMIT) {
   return Math.min(n, max);
 }
 
-function getRandomPlayer(req, res) {
+async function getRandomPlayer(req, res) {
   const { context = 'ligue1', exclude = '' } = req.query;
   const excludeIds = exclude ? exclude.split(',').map(Number) : [];
 
   // Récupérer la journée actuelle
-  const statusRow = queryOne('SELECT current_matchday FROM league_status WHERE id = 1');
+  const statusRow = await queryOne('SELECT current_matchday FROM league_status WHERE id = 1');
   const currentMatchday = statusRow ? statusRow.current_matchday : 1;
 
   let query = `
@@ -44,7 +44,7 @@ function getRandomPlayer(req, res) {
     }
   }
 
-  const allPlayers = queryAll(query, params).filter(p => !excludeIds.includes(p.id));
+  const allPlayers = (await queryAll(query, params)).filter(p => !excludeIds.includes(p.id));
 
   if (allPlayers.length === 0) {
     return res.status(404).json({ error: 'Aucun joueur disponible' });
@@ -134,7 +134,7 @@ function getRandomPlayer(req, res) {
   res.json(bucket[bucket.length - 1]);
 }
 
-function getPlayers(req, res) {
+async function getPlayers(req, res) {
   const { position, club, search, limit: rawLimit = '50', offset: rawOffset = '0' } = req.query;
   const limit = sanitizeInt(rawLimit, 50);
   const offset = sanitizeInt(rawOffset, 0, 0, 10000);
@@ -169,22 +169,22 @@ function getPlayers(req, res) {
   query += ' ORDER BY score DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const players = queryAll(query, params);
-  const row = queryOne(countQuery, countParams);
+  const players = await queryAll(query, params);
+  const row = await queryOne(countQuery, countParams);
   const total = row ? row.total : 0;
 
   res.json({ players, total });
 }
 
-function getPlayerById(req, res) {
+async function getPlayerById(req, res) {
   const { id } = req.params;
 
-  const player = queryOne('SELECT * FROM players WHERE id = ?', [parseInt(id, 10)]);
+  const player = await queryOne('SELECT * FROM players WHERE id = ?', [parseInt(id, 10)]);
   if (!player) {
     return res.status(404).json({ error: 'Joueur non trouve' });
   }
 
-  const rankRow = queryOne(`
+  const rankRow = await queryOne(`
     SELECT COUNT(*) + 1 as rank FROM players
     WHERE score > ? AND source_season = ? AND archived = 0
   `, [player.score, CURRENT_SEASON]);
@@ -192,7 +192,7 @@ function getPlayerById(req, res) {
   res.json({ ...player, rank: rankRow ? rankRow.rank : 1 });
 }
 
-function getRanking(req, res) {
+async function getRanking(req, res) {
   const { context, position, club, search, period, nationality, limit: rawLimit = '50', offset: rawOffset = '0' } = req.query;
   const limit = sanitizeInt(rawLimit, 50);
   const offset = sanitizeInt(rawOffset, 0, 0, 10000);
@@ -300,8 +300,8 @@ function getRanking(req, res) {
   }
   params.push(limit, offset);
 
-  const players = queryAll(query, params);
-  const row = queryOne(countQuery, countParams);
+  const players = await queryAll(query, params);
+  const row = await queryOne(countQuery, countParams);
   const total = row ? row.total : 0;
 
   // Compter le total de votants uniques pour la période
@@ -311,7 +311,7 @@ function getRanking(req, res) {
   } else {
     totalUniqueVotersQuery = `SELECT COUNT(DISTINCT voter_ip) as count FROM votes`;
   }
-  const uniqueVotersRow = queryOne(totalUniqueVotersQuery);
+  const uniqueVotersRow = await queryOne(totalUniqueVotersQuery);
   const totalUniqueVoters = uniqueVotersRow ? uniqueVotersRow.count : 0;
 
   // Pour les résultats avec période, utiliser period_score comme score
@@ -322,8 +322,8 @@ function getRanking(req, res) {
   res.json({ players: result, total, total_unique_voters: totalUniqueVoters });
 }
 
-function getContexts(req, res) {
-  const totalRow = queryOne(`
+async function getContexts(req, res) {
+  const totalRow = await queryOne(`
     SELECT COUNT(*) as count FROM players
     WHERE source_season = ? AND archived = 0
   `, [CURRENT_SEASON]);
@@ -333,7 +333,7 @@ function getContexts(req, res) {
   ];
 
   for (const club of L1_CLUBS) {
-    const row = queryOne(`
+    const row = await queryOne(`
       SELECT COUNT(*) as count FROM players
       WHERE club = ? AND source_season = ? AND archived = 0
     `, [club.name, CURRENT_SEASON]);
@@ -344,9 +344,9 @@ function getContexts(req, res) {
   res.json({ contexts });
 }
 
-function getRecentMatches(req, res) {
+async function getRecentMatches(req, res) {
   // Trouver la dernière journée avec au moins un match FINISHED
-  const latest = queryOne(
+  const latest = await queryOne(
     `SELECT MAX(matchday) as md FROM matches WHERE status = 'FINISHED' AND season = ?`,
     [CURRENT_SEASON]
   );
@@ -356,7 +356,7 @@ function getRecentMatches(req, res) {
   const dow = now.getDay(); // 0=Dim, 1=Lun, ..., 6=Sam
 
   // Vérifier si le dernier match terminé date de plus de 2 jours
-  const latestMatch = queryOne(
+  const latestMatch = await queryOne(
     `SELECT match_date FROM matches WHERE status = 'FINISHED' AND season = ? ORDER BY match_date DESC LIMIT 1`,
     [CURRENT_SEASON]
   );
@@ -368,7 +368,7 @@ function getRecentMatches(req, res) {
 
   // À partir de mercredi, si pas de match récent, afficher la prochaine journée
   if (daysSinceLastMatch > 2 && dow >= 3) {
-    const nextMdExists = queryOne(
+    const nextMdExists = await queryOne(
       `SELECT id FROM matches WHERE matchday = ? AND season = ?`,
       [currentMd + 1, CURRENT_SEASON]
     );
@@ -378,16 +378,14 @@ function getRecentMatches(req, res) {
   }
 
   // Récupérer tous les matchs de la journée affichée
-  const matches = queryAll(
+  const matches = await queryAll(
     `SELECT * FROM matches WHERE matchday = ? AND season = ? ORDER BY match_date`,
     [displayMd, CURRENT_SEASON]
   );
 
   // Tri intelligent selon la progression dans la journée
-  // < 2 jours calendaires depuis le 1er match → chrono (anticipation)
-  // >= 2 jours → reverse chrono (récap, matchs récents d'abord)
   if (matches.length > 0) {
-    const firstMatchDate = new Date(matches[0].match_date); // matches triés par match_date ASC
+    const firstMatchDate = new Date(matches[0].match_date);
     firstMatchDate.setHours(0, 0, 0, 0);
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);

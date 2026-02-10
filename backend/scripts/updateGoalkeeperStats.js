@@ -5,7 +5,7 @@
  * Usage: node scripts/updateGoalkeeperStats.js
  */
 
-const { initDb, runSql, saveDb, queryAll } = require('../models/database');
+const { initDb, runSql, queryAll } = require('../models/database');
 
 // SofaScore API - Ligue 1 saison 2025-2026
 const SOFASCORE_API = 'https://api.sofascore.com/api/v1/unique-tournament/34/season/77356/statistics';
@@ -64,7 +64,7 @@ async function fetchGoalkeeperStats() {
 
 async function updateDatabase(gkStats) {
   // Récupérer tous les gardiens de la BDD
-  const dbGoalkeepers = queryAll(`
+  const dbGoalkeepers = await queryAll(`
     SELECT id, name, club, matches_played, clean_sheets, saves
     FROM players
     WHERE position = 'Gardien' AND source_season = '2025-2026'
@@ -92,7 +92,7 @@ async function updateDatabase(gkStats) {
     });
 
     if (match) {
-      runSql(`
+      await runSql(`
         UPDATE players
         SET clean_sheets = ?, saves = ?, matches_played = ?
         WHERE id = ?
@@ -104,8 +104,6 @@ async function updateDatabase(gkStats) {
       notFound.push(`${gk.name} (${gk.club})`);
     }
   }
-
-  saveDb();
 
   console.log(`\n${updated} gardiens mis à jour`);
   if (notFound.length > 0) {

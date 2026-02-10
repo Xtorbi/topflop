@@ -8,7 +8,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const cheerio = require('cheerio');
-const { initDb, runSql, saveDb, queryAll } = require('../models/database');
+const { initDb, runSql, queryAll } = require('../models/database');
 
 const TRANSFERMARKT_BASE = 'https://www.transfermarkt.fr';
 const SEASON_ID = '2025';
@@ -216,10 +216,10 @@ async function importAllPlayers() {
   console.log('Base de données initialisée\n');
 
   // Vider les anciens joueurs de cette saison (optionnel)
-  const existingCount = queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = ?`, [CURRENT_SEASON]);
+  const existingCount = await queryAll(`SELECT COUNT(*) as count FROM players WHERE source_season = ?`, [CURRENT_SEASON]);
   if (existingCount[0]?.count > 0) {
     console.log(`Suppression de ${existingCount[0].count} joueurs existants de la saison ${CURRENT_SEASON}...`);
-    runSql(`DELETE FROM players WHERE source_season = ?`, [CURRENT_SEASON]);
+    await runSql(`DELETE FROM players WHERE source_season = ?`, [CURRENT_SEASON]);
   }
 
   let totalImported = 0;
@@ -243,7 +243,7 @@ async function importAllPlayers() {
       for (const player of players) {
         const playerStats = stats[player.name.toLowerCase()] || { matches: 0, goals: 0, assists: 0 };
 
-        runSql(`
+        await runSql(`
           INSERT INTO players (
             first_name, last_name, name, club, position, nationality,
             photo_url, age, number,
@@ -280,8 +280,6 @@ async function importAllPlayers() {
     }
   }
 
-  saveDb();
-
   console.log('\n===========================================');
   console.log('  IMPORT TERMINÉ');
   console.log('===========================================');
@@ -294,7 +292,7 @@ async function importAllPlayers() {
 
   // Résumé par club
   console.log('\nRépartition par club:');
-  const clubCounts = queryAll(`
+  const clubCounts = await queryAll(`
     SELECT club, COUNT(*) as count
     FROM players
     WHERE source_season = ?

@@ -1,7 +1,7 @@
 const { queryOne, runSql } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
 
-function handleVote(req, res) {
+async function handleVote(req, res) {
   const { player_id, vote, context = 'ligue1' } = req.body;
 
   // Récupérer l'IP du votant (compatible proxies comme Render/Vercel)
@@ -12,7 +12,7 @@ function handleVote(req, res) {
     return res.status(400).json({ error: 'Parametres invalides' });
   }
 
-  const player = queryOne(
+  const player = await queryOne(
     'SELECT * FROM players WHERE id = ? AND source_season = ? AND archived = 0',
     [player_id, CURRENT_SEASON]
   );
@@ -22,7 +22,7 @@ function handleVote(req, res) {
   }
 
   // Anti-spam : 1 vote par joueur par IP toutes les 24h
-  const existing = queryOne(
+  const existing = await queryOne(
     `SELECT id FROM votes WHERE player_id = ? AND voter_ip = ? AND voted_at > datetime('now', '-24 hours')`,
     [player_id, voterIp]
   );
@@ -31,14 +31,14 @@ function handleVote(req, res) {
   }
 
   // Get old rank
-  const oldRankRow = queryOne(`
+  const oldRankRow = await queryOne(`
     SELECT COUNT(*) + 1 as rank FROM players
     WHERE score > ? AND source_season = ? AND archived = 0
   `, [player.score, CURRENT_SEASON]);
   const oldRank = oldRankRow ? oldRankRow.rank : 1;
 
   // Record vote
-  runSql('INSERT INTO votes (player_id, vote_type, context, voter_ip) VALUES (?, ?, ?, ?)',
+  await runSql('INSERT INTO votes (player_id, vote_type, context, voter_ip) VALUES (?, ?, ?, ?)',
     [player_id, vote, context, voterIp]);
 
   // Update player scores
@@ -47,7 +47,7 @@ function handleVote(req, res) {
   const column = VOTE_COLUMNS[vote];
   const scoreChange = VOTE_SCORES[vote];
 
-  runSql(`
+  await runSql(`
     UPDATE players
     SET ${column} = ${column} + 1,
         total_votes = total_votes + 1,
@@ -57,8 +57,8 @@ function handleVote(req, res) {
   `, [scoreChange, player_id]);
 
   // Get updated player and new rank
-  const updated = queryOne('SELECT * FROM players WHERE id = ?', [player_id]);
-  const newRankRow = queryOne(`
+  const updated = await queryOne('SELECT * FROM players WHERE id = ?', [player_id]);
+  const newRankRow = await queryOne(`
     SELECT COUNT(*) + 1 as rank FROM players
     WHERE score > ? AND source_season = ? AND archived = 0
   `, [updated.score, CURRENT_SEASON]);
