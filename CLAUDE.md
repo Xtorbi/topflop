@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 9 fevrier 2026
+**Derniere mise a jour** : 10 fevrier 2026
 
 ---
 
@@ -15,6 +15,52 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 10 fevrier 2026 - Audit securite + Nettoyage
+
+**Audit securite complet du backend** (18 points analyses) :
+
+**Points critiques corriges (commits `05e7052` + `af105e1`)** :
+
+| # | Probleme | Fix |
+|---|----------|-----|
+| 2 | CORS ouvert `*` | Restreint aux domaines prod (topflop.fr, vercel, localhost) |
+| 3 | Admin key en fallback hardcode | `ADMIN_KEY` env obligatoire, 403 si absent |
+| 4 | Vote: champs req.body passes direct en SQL | Mapping explicite `{1, 0, -1}` pour vote_type |
+| 5 | Pas de validation inputs ranking/players | Whitelist positions, plafond limit (100), offset (10000), search tronque (50 chars) |
+| 6 | Rate limit 2s trop court | Passe a 3s |
+| 7 | ipTracker: compteur RAM (perdu au restart) | Remplace par COUNT en BDD sur table votes (voter_ip) |
+| 8 | Pas de timeout sur fetch Football-Data | `AbortSignal.timeout(15000)` ajoute |
+
+**Nettoyage (commit `8ec05c2`)** :
+
+- **36 scripts morts supprimes** dans `backend/scripts/` (-6353 lignes)
+  - Conserves : `checkDb.js`, `verifyData.js`, `importTransfermarkt.js`, `updateGoalkeeperStats.js`
+- **favicon.png** ajoute (fallback Safari, SVG non supporte)
+- **robots.txt** + **sitemap.xml** crees pour SEO (7 URLs)
+- **MatchGrid** : erreurs fetch loguees au lieu d'etre avalees silencieusement
+
+**Points notes mais non traites (pas urgents)** :
+- Console.log partout → nettoyage futur
+- Config clubs dupliquee frontend/backend → refacto future
+- Dependances CDN externes (flagcdn, AdSense) → acceptable
+- AdSense slots placeholders → attente validation Google
+- BDD ephemere sur Render free tier → migrer vers persistent storage quand budget
+- Pas de risque XSS : React echappe par defaut, pas de `dangerouslySetInnerHTML`
+
+**Fichiers modifies** :
+- `backend/controllers/playersController.js` : validation inputs (whitelist, plafonds, truncate)
+- `backend/middleware/rateLimiter.js` : 2s → 3s
+- `backend/middleware/ipTracker.js` : compteur RAM → check BDD
+- `backend/routes/admin.js` : timeout 15s fetch, CORS restreint, admin key sans fallback
+- `backend/controllers/votesController.js` : mapping vote_type explicite
+- `frontend/index.html` : favicon PNG fallback
+- `frontend/src/components/MatchGrid.jsx` : log erreurs fetch
+- `frontend/public/robots.txt` : nouveau
+- `frontend/public/sitemap.xml` : nouveau
+- `frontend/public/favicon.png` : nouveau
+
+---
 
 ### Session du 9 fevrier 2026 (nuit) - Renforcement bg-vibes
 
@@ -922,11 +968,20 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 
 ## Ce qui reste a faire
 
-### Avant Go Live (securite)
+### Securite (audit 10 fevrier 2026)
 
 - [x] **Deplacer la cle API Football-Data.org en variable d'environnement** FAIT
-  - Code : commit d3212ae (lit `process.env.FOOTBALL_DATA_API_KEY`)
-  - Render : variable configuree dans Environment
+- [x] **CORS restreint** aux domaines prod (topflop.fr, vercel, localhost)
+- [x] **Admin key sans fallback** : variable env obligatoire
+- [x] **Vote mapping explicite** : `{1, 0, -1}` au lieu de passer req.body direct
+- [x] **Validation inputs** : whitelist positions, plafond limit/offset, truncate search
+- [x] **Rate limit 3s** (etait 2s)
+- [x] **ipTracker via BDD** (etait compteur RAM, perdu au restart)
+- [x] **Timeout fetch** Football-Data (15s)
+- [x] **Nettoyage scripts morts** (36 supprimes)
+- [x] **SEO** : robots.txt + sitemap.xml
+- [ ] **BDD persistante** : migrer hors Render free tier (ephemere au redeploy)
+- [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
 
 ### Priorite haute (pour lancer le MVP)
 
@@ -942,15 +997,10 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 
 - [ ] **Design** :
   - [ ] Verifier responsive mobile (tester sur telephone)
-  - [ ] Ajouter animations de transition au vote (fade in/out)
-  - [ ] Messages d'encouragement tous les 10/25/50 votes
-- [ ] **UX** :
-  - [ ] Feedback visuel ameliore apres vote (animation confetti ou similar)
   - [ ] Placeholder si photo joueur manquante (silhouette generique)
-  - [ ] Loader pendant chargement joueur suivant
-- [ ] **Anti-spam v1.1** :
-  - [ ] Browser fingerprinting (FingerprintJS)
-  - [x] 1 vote par joueur par IP toutes les 24h (backend check + index)
+- [ ] **Infra** :
+  - [ ] BDD persistante (Render free = ephemere au redeploy)
+  - [ ] Nettoyage console.log en prod
 
 ### Priorite basse (post-MVP v1.2+)
 
@@ -1130,9 +1180,10 @@ node scripts/importTransfermarkt.js
 
 1. **Saison** : Configure pour 2025-2026, les clubs ont ete mis a jour avec les promus/relegues
 2. **Photos** : Utilise les photos de l'API (Transfermarkt ou API-Football)
-3. **Anti-spam** : Rate limiting (2s) + IP tracking (100/jour) + 1 vote/joueur/IP/24h
-4. **Positions** : Gardien, Defenseur, Milieu, Attaquant (en francais sans accents dans la BDD)
-5. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
+3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD (200/jour) + 1 vote/joueur/IP/24h
+4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
+5. **Securite** : CORS restreint, admin key env-only, validation inputs, timeout fetch
+6. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
 
 ---
 
@@ -1168,3 +1219,5 @@ node scripts/importTransfermarkt.js
 | 4 fev 2026 (soir) | Noms clubs : formatage intelligent (Olympique de Marseille) |
 | 6 fev 2026 | Monetisation : emplacements AdSense (interstitiel, banners) |
 | 6 fev 2026 | Interstitiel tous les 10 votes, banners sur Home/Classement |
+| 10 fev 2026 | Audit securite : CORS, validation inputs, rate limit, ipTracker BDD |
+| 10 fev 2026 | Nettoyage 36 scripts morts, ajout sitemap/robots.txt SEO |
