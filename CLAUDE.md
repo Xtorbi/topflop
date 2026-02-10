@@ -16,6 +16,37 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 10 fevrier 2026 (soir) - Audit 4 agents + Fixes secu/UX
+
+**Audit croise par 4 agents** (UI Designer, Engineer, Security Auditor, Security Engineer) :
+- Analyse complete du code frontend + backend
+- Synthese des points de convergence et contradictions
+- Top 10 actions priorisees par consensus
+
+**8 fixes implementes** :
+
+| # | Fix | Fichier |
+|---|-----|---------|
+| 1 | Rate limit global 100 req/min `/api/*` | `backend/server.js` |
+| 2 | Suppression puppeteer + cheerio (-134 packages) | `backend/package.json` |
+| 3 | Helmet headers secu (X-Frame, HSTS, X-Content-Type) | `backend/server.js` |
+| 4 | SQL interpolation `${column}` → 3 requetes distinctes | `backend/controllers/votesController.js` |
+| 5 | Cle admin verifiee (ancienne rejetee en prod) | - |
+| 6 | Contraste texte WCAG : white/20→/40, white/40→/60 | `Vote.jsx`, `Home.jsx`, `Ranking.jsx` |
+| 7 | Debounce 300ms recherche classement | `frontend/src/pages/Ranking.jsx` |
+| 8 | Middleware erreur global catch-all + unhandledRejection | `backend/server.js` |
+
+**Nouveau favicon** : pouce haut emerald sur fond navy (remplace ancien ballon+ondes)
+- `frontend/public/favicon.svg` + `favicon.png`
+
+**Points notes pour plus tard** (issus des audits) :
+- Hasher les IP en BDD (HMAC-SHA256) pour conformite RGPD Article 32
+- Conditionner chargement AdSense au consentement cookies
+- Monitoring erreurs (Sentry)
+- FingerprintJS anti-spam v1.1
+
+---
+
 ### Session du 10 fevrier 2026 (apres-midi) - Migration BDD Turso
 
 **Migration sql.js → Turso (libSQL) pour BDD persistante** :
@@ -1021,6 +1052,12 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **Nettoyage scripts morts** (36 supprimes)
 - [x] **SEO** : robots.txt + sitemap.xml
 - [x] **BDD persistante** : migre vers Turso (libSQL cloud, region EU West)
+- [x] **Rate limit global** : 100 req/min sur /api/* (express-rate-limit)
+- [x] **Helmet** : headers secu (X-Frame-Options, HSTS, X-Content-Type-Options)
+- [x] **SQL interpolation** : supprimee dans votesController (3 requetes distinctes)
+- [x] **Middleware erreur** : catch-all + unhandledRejection
+- [x] **Deps inutilisees** : puppeteer + cheerio supprimes (-134 packages)
+- [ ] **Hash IP** (HMAC-SHA256) — conformite RGPD Article 32
 - [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
 
 ### Priorite haute (pour lancer le MVP)
@@ -1264,3 +1301,5 @@ node scripts/importTransfermarkt.js
 | 10 fev 2026 | Audit securite : CORS, validation inputs, rate limit, ipTracker BDD |
 | 10 fev 2026 | Nettoyage 36 scripts morts, ajout sitemap/robots.txt SEO |
 | 10 fev 2026 | Migration BDD : sql.js → Turso (libSQL cloud, EU West, persistante) |
+| 10 fev 2026 | Audit 4 agents + 8 fixes : rate limit global, helmet, SQL fix, contraste, debounce |
+| 10 fev 2026 | Nouveau favicon : pouce haut emerald sur fond navy |
