@@ -24,6 +24,7 @@ async function getRandomPlayer(req, res) {
     SELECT * FROM players
     WHERE source_season = ?
       AND archived = 0
+      AND matches_played > 0
   `;
   const params = [CURRENT_SEASON];
 
