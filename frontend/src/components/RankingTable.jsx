@@ -372,6 +372,7 @@ function RankingTable({ players, adInterval = 0 }) {
                   alt={`Drapeau ${player.nationality}`}
                   width="16"
                   height="12"
+                  loading="lazy"
                   className="w-4 h-3 object-cover"
                 />
               )}

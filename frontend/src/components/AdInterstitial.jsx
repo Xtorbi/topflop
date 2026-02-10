@@ -16,15 +16,19 @@ const ADS_ENABLED = false;
 // Mode dev : affiche un placeholder visible (mettre à false en prod)
 const DEV_MODE = false;
 
+function hasAdConsent() {
+  return localStorage.getItem('fv-cookie-consent') === 'accepted';
+}
+
 function AdInterstitial({ isOpen, onClose, slot }) {
-  // Si les pubs sont désactivées, fermer immédiatement
+  // Si les pubs sont désactivées ou cookies refusés, fermer immédiatement
   useEffect(() => {
-    if (!ADS_ENABLED && isOpen) {
+    if ((!ADS_ENABLED || !hasAdConsent()) && isOpen) {
       onClose();
     }
   }, [isOpen, onClose]);
 
-  if (!ADS_ENABLED) return null;
+  if (!ADS_ENABLED || !hasAdConsent()) return null;
   const [countdown, setCountdown] = useState(5);
   const [canSkip, setCanSkip] = useState(false);
   const [adBlocked, setAdBlocked] = useState(false);

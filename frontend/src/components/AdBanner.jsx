@@ -15,6 +15,21 @@ const ADS_ENABLED = false;
 // Mode dev : affiche des placeholders visibles (mettre à false en prod)
 const DEV_MODE = false;
 
+const ADSENSE_CLIENT = 'ca-pub-5498498962137796';
+
+// Charge le script AdSense une seule fois, uniquement si consentement accepté
+let adsenseLoaded = false;
+function loadAdSenseScript() {
+  if (adsenseLoaded) return;
+  if (localStorage.getItem('fv-cookie-consent') !== 'accepted') return;
+  adsenseLoaded = true;
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+  script.crossOrigin = 'anonymous';
+  document.head.appendChild(script);
+}
+
 const AD_FORMATS = {
   leaderboard: { width: 728, height: 90, label: 'Leaderboard 728x90' },
   banner: { width: 320, height: 50, label: 'Banner 320x50' },
@@ -23,8 +38,9 @@ const AD_FORMATS = {
 };
 
 function AdBanner({ slot, format = 'banner', className = '' }) {
-  // Si les pubs sont désactivées, ne rien afficher
+  // Si les pubs sont désactivées ou cookies refusés, ne rien afficher
   if (!ADS_ENABLED) return null;
+  if (localStorage.getItem('fv-cookie-consent') !== 'accepted') return null;
 
   const adRef = useRef(null);
   const [adBlocked, setAdBlocked] = useState(false);
@@ -35,6 +51,9 @@ function AdBanner({ slot, format = 'banner', className = '' }) {
   useEffect(() => {
     // En mode dev, on skip la détection
     if (DEV_MODE) return;
+
+    // Charger le script AdSense dynamiquement (une seule fois)
+    loadAdSenseScript();
 
     // Vérifier si AdSense est chargé
     if (typeof window === 'undefined') return;
