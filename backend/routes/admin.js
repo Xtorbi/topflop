@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const { runSql } = require('../models/database');
+const { runSql, queryOne, queryAll } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
 
 // Clés secrètes
@@ -230,8 +230,6 @@ router.get('/cron-status', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { queryAll, queryOne } = require('../models/database');
-
   // Combien de joueurs ont un last_match_date ?
   const withDate = await queryOne(
     `SELECT COUNT(*) as count FROM players WHERE last_match_date IS NOT NULL AND source_season = ?`,
@@ -257,6 +255,36 @@ router.get('/cron-status', async (req, res) => {
     recentClubMatches: recentClubs,
     serverTime: new Date().toISOString(),
   });
+});
+
+/**
+ * Archiver un joueur (transfert, départ, etc.)
+ * POST /api/admin/archive-player
+ * Body: { playerId, reason }
+ */
+router.post('/archive-player', express.json(), async (req, res) => {
+  const { key } = req.query;
+  if (key !== ADMIN_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { playerId, reason } = req.body;
+  if (!playerId) {
+    return res.status(400).json({ error: 'playerId is required' });
+  }
+
+  const player = await queryOne('SELECT id, name, club FROM players WHERE id = ?', [parseInt(playerId, 10)]);
+  if (!player) {
+    return res.status(404).json({ error: 'Player not found' });
+  }
+
+  await runSql(
+    `UPDATE players SET archived = 1, archived_reason = ?, archived_at = datetime('now') WHERE id = ?`,
+    [reason || 'Archived via admin', parseInt(playerId, 10)]
+  );
+
+  console.log(`[ADMIN] Archived player #${player.id} ${player.name} (${player.club}) — reason: ${reason || 'N/A'}`);
+  res.json({ success: true, player: player.name, club: player.club, reason: reason || 'Archived via admin' });
 });
 
 module.exports = router;

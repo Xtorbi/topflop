@@ -1,7 +1,7 @@
 const { queryAll, queryOne } = require('../models/database');
 const { CURRENT_SEASON, CLUB_POPULARITY, L1_CLUBS } = require('../config/clubs');
 
-const VALID_POSITIONS = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant'];
+const VALID_POSITIONS = ['Gardien', 'Defenseur', 'Milieu', 'Attaquant'];
 const VALID_PERIODS = ['week', 'month'];
 const MAX_LIMIT = 100;
 const MAX_SEARCH_LENGTH = 50;
@@ -51,88 +51,115 @@ async function getRandomPlayer(req, res) {
     return res.status(404).json({ error: 'Aucun joueur disponible' });
   }
 
-  // Répartir en buckets par récence du dernier match joué (last_match_date)
-  // 80% → Joueurs ayant joué dans les 24h
-  // 15% → Joueurs ayant joué entre 24h et 48h
-  // 4%  → Joueurs ayant joué entre 48h et 72h
-  // 1%  → Reste (pas de match récent)
-  const buckets = { current: [], jMinus1: [], jMinus2: [], older: [] };
+  // Répartir en buckets par récence du dernier match joué
+  // Fenetres adaptées au calendrier L1 (matchs ven/sam/dim)
+  // 50% → < 2 jours (48h) — matchs d'hier/avant-hier
+  // 25% → 2-5 jours (48h-120h) — dimanche vu du jeudi
+  // 15% → 5-8 jours (120h-192h) — journée précédente
+  // 10% → reste (> 8 jours ou pas de match)
+  // Fix : joueurs < 5 matchs → bucket "older" direct (bench warmers)
+  const buckets = { fresh: [], recent: [], lastWeek: [], older: [] };
   const now = Date.now();
 
   for (const player of allPlayers) {
+    // Bench warmers (< 5 matchs) → older, peu importe la date
+    if ((player.matches_played || 0) < 5) {
+      buckets.older.push(player);
+      continue;
+    }
+
     if (player.last_match_date) {
       const matchTime = new Date(player.last_match_date).getTime();
       const hoursAgo = (now - matchTime) / (1000 * 60 * 60);
 
-      if (hoursAgo < 24) buckets.current.push(player);
-      else if (hoursAgo < 48) buckets.jMinus1.push(player);
-      else if (hoursAgo < 72) buckets.jMinus2.push(player);
+      if (hoursAgo < 48) buckets.fresh.push(player);
+      else if (hoursAgo < 120) buckets.recent.push(player);
+      else if (hoursAgo < 192) buckets.lastWeek.push(player);
       else buckets.older.push(player);
     } else {
       buckets.older.push(player);
     }
   }
 
-  // Sélection 80/15/4/1 avec fallback
+  // Sélection 50/25/15/10 avec fallback en cascade
   const roll = Math.random() * 100;
   let bucket;
 
-  if (roll < 80 && buckets.current.length > 0) {
-    bucket = buckets.current;
-  } else if (roll < 95 && buckets.jMinus1.length > 0) {
-    bucket = buckets.jMinus1;
-  } else if (roll < 99 && buckets.jMinus2.length > 0) {
-    bucket = buckets.jMinus2;
+  if (roll < 50 && buckets.fresh.length > 0) {
+    bucket = buckets.fresh;
+  } else if (roll < 75 && buckets.recent.length > 0) {
+    bucket = buckets.recent;
+  } else if (roll < 90 && buckets.lastWeek.length > 0) {
+    bucket = buckets.lastWeek;
   } else if (buckets.older.length > 0) {
     bucket = buckets.older;
   } else {
-    // Fallback: combiner tous les buckets disponibles
-    bucket = buckets.current.concat(buckets.jMinus1, buckets.jMinus2);
-    if (bucket.length === 0) bucket = allPlayers;
+    // Fallback en cascade : premier bucket non-vide
+    bucket = buckets.fresh.length > 0 ? buckets.fresh
+      : buckets.recent.length > 0 ? buckets.recent
+      : buckets.lastWeek.length > 0 ? buckets.lastWeek
+      : allPlayers;
   }
 
-  // Sélection aléatoire pondérée dans le bucket
-  // Favorise : joueurs du dernier match, grands clubs, titulaires, performants
-  const weights = bucket.map(p => {
+  // Sélection "club-first" : 1) tirer un club, 2) tirer un joueur dans ce club
+  // Évite que les 30 joueurs PSG/OM écrasent les petits clubs
+
+  // Étape 1 : grouper par club
+  const clubGroups = {};
+  for (const p of bucket) {
+    if (!clubGroups[p.club]) clubGroups[p.club] = [];
+    clubGroups[p.club].push(p);
+  }
+
+  // Étape 2 : tirer un club pondéré par sqrt(popularity) — compression du biais
+  // PSG: sqrt(100)=10, OM: sqrt(80)=9, Auxerre: sqrt(10)=3 → ratio 3.3x (était 10x)
+  const clubs = Object.keys(clubGroups);
+  const clubWeights = clubs.map(club => Math.sqrt(CLUB_POPULARITY[club] || 10));
+  const totalClubWeight = clubWeights.reduce((s, w) => s + w, 0);
+  let clubRoll = Math.random() * totalClubWeight;
+  let selectedClub = clubs[clubs.length - 1];
+  for (let i = 0; i < clubs.length; i++) {
+    clubRoll -= clubWeights[i];
+    if (clubRoll <= 0) { selectedClub = clubs[i]; break; }
+  }
+
+  const clubPlayers = clubGroups[selectedClub];
+
+  // Étape 3 : tirer un joueur dans le club choisi (pondéré par matchs/stats)
+  const weights = clubPlayers.map(p => {
     const baseWeight = 50;
 
-    // Bonus fraîcheur match (0-100) : boost énorme si match récent
+    // Bonus fraîcheur simplifié (dans le club, pas besoin de différencier finement)
     let freshnessBonus = 0;
     if (p.last_match_date) {
-      const matchTime = new Date(p.last_match_date).getTime();
-      const hoursAgo = (now - matchTime) / (1000 * 60 * 60);
-      if (hoursAgo < 6) freshnessBonus = 100;        // Match vient de finir !
-      else if (hoursAgo < 24) freshnessBonus = 60;   // Hier soir
-      else if (hoursAgo < 48) freshnessBonus = 30;   // Avant-hier
-      else if (hoursAgo < 72) freshnessBonus = 15;   // Dans les 3 jours
+      const hoursAgo = (now - new Date(p.last_match_date).getTime()) / (1000 * 60 * 60);
+      if (hoursAgo < 48) freshnessBonus = 30;
+      else if (hoursAgo < 120) freshnessBonus = 15;
     }
 
-    // Bonus club (0-50) : PSG=50, OM=40, Lyon=30...
-    const clubBonus = (CLUB_POPULARITY[p.club] || 10) * 0.5;
-
-    // Bonus titulaire (0-30) : plus de matchs = plus visible
-    const matchesBonus = Math.min(30, (p.matches_played || 0) * 1.5);
+    // Bonus titulaire (0-40) : plus de matchs = plus visible
+    const matchesBonus = Math.min(40, (p.matches_played || 0) * 2);
 
     // Bonus stats (0-20) : buts + passes décisives
     const statsBonus = Math.min(20, ((p.goals || 0) + (p.assists || 0)) * 2);
 
-    // Légère pénalité si déjà beaucoup voté (pour varier, mais réduite)
+    // Légère pénalité si déjà beaucoup voté (pour varier)
     const votePenalty = Math.min(15, Math.log(p.total_votes + 1) * 3);
 
-    return Math.max(1, baseWeight + freshnessBonus + clubBonus + matchesBonus + statsBonus - votePenalty);
+    return Math.max(1, baseWeight + freshnessBonus + matchesBonus + statsBonus - votePenalty);
   });
 
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   let random = Math.random() * totalWeight;
 
-  for (let i = 0; i < bucket.length; i++) {
+  for (let i = 0; i < clubPlayers.length; i++) {
     random -= weights[i];
     if (random <= 0) {
-      return res.json(bucket[i]);
+      return res.json(clubPlayers[i]);
     }
   }
 
-  res.json(bucket[bucket.length - 1]);
+  res.json(clubPlayers[clubPlayers.length - 1]);
 }
 
 async function getPlayers(req, res) {
