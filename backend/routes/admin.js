@@ -15,6 +15,17 @@ if (!FOOTBALL_DATA_API_KEY) {
   console.warn('[ADMIN] FOOTBALL_DATA_API_KEY not set — cron will fail');
 }
 
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+// Auth admin : supporte header Authorization: Bearer <key> (prefere) ou query ?key= (legacy)
+function getAdminKey(req) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+  return req.query.key;
+}
+
 // Mapping Football-Data.org -> nom en BDD
 const FOOTBALLDATA_TO_DB = {
   'Paris Saint-Germain FC': 'Paris Saint-Germain',
@@ -192,8 +203,8 @@ async function updateMatches() {
 /**
  * Route HTTP pour déclencher manuellement la mise à jour
  */
-router.get('/update-matches', async (req, res) => {
-  const { key } = req.query;
+router.get('/update-matches', asyncHandler(async (req, res) => {
+  const key = getAdminKey(req);
 
   if (key !== ADMIN_KEY) {
     console.warn(`[CRON] Unauthorized attempt at ${new Date().toISOString()}`);
@@ -207,9 +218,9 @@ router.get('/update-matches', async (req, res) => {
     const now = new Date();
     lastCronResult = { success: false, error: error.message, executedAt: now.toISOString() };
     console.error(`[CRON] ERREUR at ${now.toISOString()}:`, error.message);
-    res.status(500).json({ error: error.message, timestamp: now.toISOString() });
+    res.status(500).json({ error: 'Update failed', timestamp: now.toISOString() });
   }
-});
+}));
 
 // Stocker le dernier résultat du cron pour monitoring
 let lastCronResult = null;
@@ -224,8 +235,8 @@ router.get('/health', (req, res) => {
 /**
  * Status du cron : dernier résultat + état des last_match_date en BDD
  */
-router.get('/cron-status', async (req, res) => {
-  const { key } = req.query;
+router.get('/cron-status', asyncHandler(async (req, res) => {
+  const key = getAdminKey(req);
   if (key !== ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -255,15 +266,15 @@ router.get('/cron-status', async (req, res) => {
     recentClubMatches: recentClubs,
     serverTime: new Date().toISOString(),
   });
-});
+}));
 
 /**
  * Archiver un joueur (transfert, départ, etc.)
  * POST /api/admin/archive-player
  * Body: { playerId, reason }
  */
-router.post('/archive-player', express.json(), async (req, res) => {
-  const { key } = req.query;
+router.post('/archive-player', express.json(), asyncHandler(async (req, res) => {
+  const key = getAdminKey(req);
   if (key !== ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -285,7 +296,7 @@ router.post('/archive-player', express.json(), async (req, res) => {
 
   console.log(`[ADMIN] Archived player #${player.id} ${player.name} (${player.club}) — reason: ${reason || 'N/A'}`);
   res.json({ success: true, player: player.name, club: player.club, reason: reason || 'Archived via admin' });
-});
+}));
 
 module.exports = router;
 module.exports.updateMatches = updateMatches;

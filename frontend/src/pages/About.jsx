@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 function About() {
   return (
-    <main className="min-h-screen bg-vibes pt-24 pb-12 px-4">
+    <section className="min-h-screen bg-vibes pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-3xl">
         <Link to="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ function About() {
             <section>
               <h2 className="text-xl font-semibold text-white mt-8 mb-4">Comment ça marche ?</h2>
               <p className="mb-4">
-                Le principe est volontairement simple pour que voter prenne quelques secondes :
+                Le principe est volontairement simple pour que voter ne prenne que quelques secondes :
               </p>
               <div className="grid gap-4 mt-4">
                 <div className="flex items-start gap-4 bg-white/5 rounded-xl p-4">
@@ -276,7 +276,7 @@ function About() {
           </Link>
         </div>
       </div>
-    </main>
+    </section>
   );
 }
 

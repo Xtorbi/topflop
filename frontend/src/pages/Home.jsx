@@ -28,7 +28,7 @@ function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-vibes">
+    <section className="min-h-screen bg-vibes">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
         <div id="hero-sentinel" className="h-px" />
         {/* Hero Section */}
@@ -46,7 +46,7 @@ function Home() {
           <p className="text-white/80 text-base sm:text-xl mb-2">
             Le baromètre des joueurs de Ligue 1
           </p>
-          <p className="text-white/50 text-xs sm:text-sm mb-8">
+          <p className="text-white/60 text-xs sm:text-sm mb-8">
             Vote et découvre le classement · Saison 2025-2026
           </p>
 
@@ -104,7 +104,7 @@ function Home() {
           <AdBanner slot="HOME_BANNER_SLOT" format="banner" className="flex sm:hidden" />
         </div>
       </div>
-    </main>
+    </section>
   );
 }
 

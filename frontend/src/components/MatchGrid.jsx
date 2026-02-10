@@ -164,6 +164,8 @@ function MatchGrid() {
                   <img
                     src={CLUB_LOGOS[match.home_club]}
                     alt=""
+                    width="32"
+                    height="32"
                     className="w-8 h-8 object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
@@ -183,6 +185,8 @@ function MatchGrid() {
                   <img
                     src={CLUB_LOGOS[match.away_club]}
                     alt=""
+                    width="32"
+                    height="32"
                     className="w-8 h-8 object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />

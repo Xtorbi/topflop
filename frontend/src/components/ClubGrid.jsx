@@ -4,7 +4,7 @@ import CLUBS, { getClubLogo } from '../config/clubs';
 
 function ClubGrid() {
   const navigate = useNavigate();
-  const { setMode } = useMode();
+  const { mode, setMode } = useMode();
 
   const handleClubClick = (clubId) => {
     setMode(clubId);
@@ -21,15 +21,18 @@ function ClubGrid() {
             animationDelay: `${index * 25}ms`,
             animationFillMode: 'backwards',
           }}
-          className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4
-                     bg-white/10 backdrop-blur-sm rounded-2xl
+          className={`flex flex-col items-center justify-center gap-2 p-3 sm:p-4
+                     backdrop-blur-sm rounded-2xl
                      hover:bg-white/15
                      hover:scale-105 active:scale-95
-                     transition-all duration-200 animate-fade-in-up"
+                     transition-all duration-200 animate-fade-in-up
+                     ${mode === club.id ? 'bg-white/20 ring-2 ring-fv-green' : 'bg-white/10'}`}
         >
           <img
             src={getClubLogo(club.tmId)}
-            alt=""
+            alt={club.name}
+            width="48"
+            height="48"
             className="w-12 h-12 object-contain"
             onError={(e) => { e.target.style.display = 'none'; }}
           />

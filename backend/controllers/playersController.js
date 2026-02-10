@@ -225,12 +225,12 @@ async function getRanking(req, res) {
   const limit = sanitizeInt(rawLimit, 50);
   const offset = sanitizeInt(rawOffset, 0, 0, 10000);
 
-  // Calcul de la date de début selon la période
-  let dateFilter = null;
+  // Calcul de la date de début selon la période (en JS, pas en SQL)
+  let dateFrom = null;
   if (period === 'week') {
-    dateFilter = "datetime('now', '-7 days')";
+    dateFrom = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   } else if (period === 'month') {
-    dateFilter = "datetime('now', '-30 days')";
+    dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   }
   // 'season' ou undefined = pas de filtre date (tout depuis le début)
 
@@ -238,7 +238,7 @@ async function getRanking(req, res) {
   const params = [];
   const countParams = [];
 
-  if (dateFilter) {
+  if (dateFrom) {
     // Score calculé dynamiquement sur la période
     query = `
       SELECT p.*,
@@ -247,18 +247,18 @@ async function getRanking(req, res) {
         COUNT(DISTINCT v.voter_ip) as unique_voters,
         ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 WHEN v.vote_type = 'down' THEN -1 ELSE 0 END), 0) DESC) as rank
       FROM players p
-      LEFT JOIN votes v ON p.id = v.player_id AND v.voted_at >= ${dateFilter}
+      LEFT JOIN votes v ON p.id = v.player_id AND v.voted_at >= ?
       WHERE p.source_season = ?
         AND p.archived = 0
     `;
     countQuery = `
       SELECT COUNT(DISTINCT p.id) as total
       FROM players p
-      LEFT JOIN votes v ON p.id = v.player_id AND v.voted_at >= ${dateFilter}
+      LEFT JOIN votes v ON p.id = v.player_id AND v.voted_at >= ?
       WHERE p.source_season = ? AND p.archived = 0
     `;
-    params.push(CURRENT_SEASON);
-    countParams.push(CURRENT_SEASON);
+    params.push(dateFrom, CURRENT_SEASON);
+    countParams.push(dateFrom, CURRENT_SEASON);
   } else {
     // Score total (comportement actuel)
     query = `
@@ -279,7 +279,7 @@ async function getRanking(req, res) {
   }
 
   // Préfixe pour les colonnes (p. si période, rien sinon)
-  const col = dateFilter ? 'p.' : '';
+  const col = dateFrom ? 'p.' : '';
 
   if (context && context !== 'ligue1') {
     const clubData = L1_CLUBS.find(c => c.id === context);
@@ -320,7 +320,7 @@ async function getRanking(req, res) {
     countParams.push(nationality);
   }
 
-  if (dateFilter) {
+  if (dateFrom) {
     // GROUP BY et filtre sur joueurs ayant des votes dans la période
     query += ' GROUP BY p.id HAVING period_votes >= 1 ORDER BY period_score DESC LIMIT ? OFFSET ?';
   } else {
@@ -333,17 +333,16 @@ async function getRanking(req, res) {
   const total = row ? row.total : 0;
 
   // Compter le total de votants uniques pour la période
-  let totalUniqueVotersQuery;
-  if (dateFilter) {
-    totalUniqueVotersQuery = `SELECT COUNT(DISTINCT voter_ip) as count FROM votes WHERE voted_at >= ${dateFilter}`;
+  let uniqueVotersRow;
+  if (dateFrom) {
+    uniqueVotersRow = await queryOne(`SELECT COUNT(DISTINCT voter_ip) as count FROM votes WHERE voted_at >= ?`, [dateFrom]);
   } else {
-    totalUniqueVotersQuery = `SELECT COUNT(DISTINCT voter_ip) as count FROM votes`;
+    uniqueVotersRow = await queryOne(`SELECT COUNT(DISTINCT voter_ip) as count FROM votes`);
   }
-  const uniqueVotersRow = await queryOne(totalUniqueVotersQuery);
   const totalUniqueVoters = uniqueVotersRow ? uniqueVotersRow.count : 0;
 
   // Pour les résultats avec période, utiliser period_score comme score
-  const result = dateFilter
+  const result = dateFrom
     ? players.map(p => ({ ...p, score: p.period_score, total_votes: p.period_votes }))
     : players;
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { resetCookieConsent } from './CookieBanner';
 
 function Footer() {
   return (
@@ -6,25 +7,31 @@ function Footer() {
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6 text-sm">
-          <Link to="/a-propos" className="text-white/50 hover:text-white transition-colors">
-            À propos
+          <Link to="/a-propos" className="text-white/60 hover:text-white transition-colors">
+            A propos
           </Link>
-          <Link to="/contact" className="text-white/50 hover:text-white transition-colors">
+          <Link to="/contact" className="text-white/60 hover:text-white transition-colors">
             Contact
           </Link>
-          <Link to="/confidentialite" className="text-white/50 hover:text-white transition-colors">
-            Confidentialité
+          <Link to="/confidentialite" className="text-white/60 hover:text-white transition-colors">
+            Confidentialite
           </Link>
-          <Link to="/cgu" className="text-white/50 hover:text-white transition-colors">
+          <Link to="/cgu" className="text-white/60 hover:text-white transition-colors">
             CGU
           </Link>
+          <button
+            onClick={resetCookieConsent}
+            className="text-white/60 hover:text-white transition-colors"
+          >
+            Gerer mes cookies
+          </button>
         </div>
 
         {/* Copyright */}
-        <p className="text-center text-white/30 text-sm">
+        <p className="text-center text-white/50 text-sm">
           <span className="font-semibold text-white">TOP</span>
           <span className="font-semibold text-fv-green">FLOP</span>
-          {' '}© 2026
+          {' '}&copy; 2026
         </p>
       </div>
     </footer>

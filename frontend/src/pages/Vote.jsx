@@ -161,7 +161,7 @@ function Vote() {
   const currentPlayer = stack[0];
   const nextPlayer = stack[1];
   return (
-    <main className={`h-dvh h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
+    <section className={`h-dvh h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
       {showMilestone && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center pt-20">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-6 text-center max-w-xs mx-4 animate-bounce-in shadow-material-4">
@@ -266,16 +266,16 @@ function Vote() {
               Mes votes : {voteCount}
             </p>
 
-            <p className="sm:hidden text-center text-white/40 text-xs mt-4">
+            <p className="sm:hidden text-center text-white/60 text-xs mt-4">
               Swipe la carte pour voter
             </p>
-            <p className="hidden sm:block text-center text-white/40 text-xs mt-4">
-              ← → pour voter · ↓ pour passer
+            <p className="hidden sm:block text-center text-white/60 text-xs mt-4">
+              ← → pour voter · ↓ pour neutre
             </p>
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 }
 

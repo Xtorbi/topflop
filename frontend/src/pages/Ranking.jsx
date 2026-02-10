@@ -53,7 +53,7 @@ function Ranking() {
   }, [clubFilter, positionFilter, periodFilter, frenchOnly, search]);
 
   return (
-    <main className="min-h-screen bg-vibes pt-14">
+    <section className="min-h-screen bg-vibes pt-14">
       <div className="container mx-auto px-4 py-6 max-w-4xl relative z-10">
       {/* Banner pub en haut */}
       <div className="mb-4">
@@ -68,6 +68,7 @@ function Ranking() {
           <select
             value={clubFilter}
             onChange={(e) => setClubFilter(e.target.value)}
+            aria-label="Filtrer par club"
             className="pl-3 pr-8 py-2 flex-1 min-w-0 sm:flex-none sm:w-[145px] rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
                        bg-fv-navy border border-white/10 text-white appearance-none truncate
                        focus:outline-none focus:border-fv-green/50
@@ -90,6 +91,7 @@ function Ranking() {
           <select
             value={positionFilter}
             onChange={(e) => setPositionFilter(e.target.value)}
+            aria-label="Filtrer par poste"
             className="pl-3 pr-8 py-2 flex-1 min-w-0 sm:flex-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200
                        bg-fv-navy border border-white/10 text-white appearance-none
                        focus:outline-none focus:border-fv-green/50
@@ -152,6 +154,7 @@ function Ranking() {
         placeholder="Rechercher un joueur..."
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
+        aria-label="Rechercher un joueur"
         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl mb-4 sm:mb-6
                    text-sm sm:text-base text-white placeholder-white/30
                    focus:outline-none focus:border-fv-green/50 focus:bg-white/10
@@ -182,7 +185,7 @@ function Ranking() {
         </>
       )}
       </div>
-    </main>
+    </section>
   );
 }
 

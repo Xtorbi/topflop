@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 10 fevrier 2026 (nuit)
+**Derniere mise a jour** : 10 fevrier 2026 (nuit 3)
 
 ---
 
@@ -15,6 +15,110 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 10 fevrier 2026 (nuit 3) - Audit 6 agents + 22 fixes secu/RGPD/UX
+
+**Audit croise par 6 agents** (UI Designer, Engineer x2, Security Auditor, Security Engineer, RGPD Compliance) :
+- Analyse complete du code frontend + backend post-session nuit 2
+- Synthese en 4 blocs priorises : immediat, backend, UI, RGPD
+
+**22 corrections implementees** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **AdSense retire de index.html** (chargeait avant consentement) | `index.html` |
+| 2 | **trust proxy** Express pour rate limit derriere Render | `server.js` |
+| 3 | **Analytics conditionne au consentement** cookies | `App.jsx` |
+| 4 | **IP_HASH_SECRET fail-fast** en prod (crash si absent) | `votesController.js`, `ipTracker.js` |
+| 5 | **asyncHandler** sur toutes les routes (players, votes, admin) | `players.js`, `votes.js`, `admin.js` |
+| 6 | **Admin auth Bearer header** (+ fallback legacy query string) | `admin.js` |
+| 7 | **dateFilter SQL injection** → JS dateFrom parametre | `playersController.js` |
+| 8 | **Erreurs admin masquees** (plus de error.message en reponse) | `admin.js` |
+| 9 | **Double `<main>` HTML5** → pages en `<section>` | 7 pages (Home, Vote, Ranking, About, Contact, Privacy, Terms) |
+| 10 | **Fonts @import CSS → link HTML** avec preconnect | `index.html`, `index.css` |
+| 11 | **width/height img** MatchGrid + ClubGrid (anti-CLS) | `MatchGrid.jsx`, `ClubGrid.jsx` |
+| 12 | **Contraste WCAG** footer, hints vote, sous-titre Home | `Footer.jsx`, `Vote.jsx`, `Home.jsx` |
+| 13 | **aria-label** selects et input recherche classement | `Ranking.jsx` |
+| 14 | **transition: all → specifique** (perf repaint) | `index.css` |
+| 15 | **Page 404** NotFound.jsx + route catch-all | `NotFound.jsx`, `App.jsx` |
+| 16 | **Club actif visible** (ring emerald dans ClubGrid) | `ClubGrid.jsx` |
+| 17 | **Contact.jsx reecrit** : mailto + raccourcis sujet (plus de faux form) | `Contact.jsx` |
+| 18 | **Privacy.jsx reecrit** : conformite RGPD complete | `Privacy.jsx` |
+| 19 | **CookieBanner expiration 13 mois** + timestamp | `CookieBanner.jsx` |
+| 20 | **resetCookieConsent** exporte + bouton "Gerer mes cookies" | `CookieBanner.jsx`, `Footer.jsx` |
+| 21 | **Finalite cookies clarifiee** (AdSense + Vercel Analytics) | `CookieBanner.jsx` |
+| 22 | **Hint vote "neutre"** (remplace "passer") | `Vote.jsx` |
+
+**Privacy.jsx — contenu RGPD complet** :
+- Responsable de traitement (editeur, email)
+- Tableau bases legales (IP hashee, votes, cookies, analytics, localStorage)
+- Cookies et traceurs (consentement explicite, 13 mois, gestion)
+- Sous-traitants (Vercel, Render, Turso, Google) avec localisation
+- Transferts hors UE (EU-US Data Privacy Framework)
+- Conservation des donnees (saison, 13 mois, localStorage)
+- Droits RGPD (acces, rectification, effacement, portabilite, opposition)
+- Droit reclamation CNIL (www.cnil.fr)
+- Hebergeurs (adresses completes)
+
+**Fichiers crees** :
+- `frontend/src/pages/NotFound.jsx` : page 404
+
+**Fichiers modifies (21)** :
+- `backend/server.js` : trust proxy
+- `backend/controllers/playersController.js` : dateFrom parametre (plus de SQL interpolation)
+- `backend/controllers/votesController.js` : IP_HASH_SECRET fail-fast prod
+- `backend/middleware/ipTracker.js` : IP_HASH_SECRET fail-fast prod
+- `backend/routes/players.js` : asyncHandler 6 routes
+- `backend/routes/votes.js` : asyncHandler 2 middlewares
+- `backend/routes/admin.js` : asyncHandler + Bearer auth + erreurs masquees
+- `frontend/index.html` : AdSense retire, fonts preconnect
+- `frontend/src/App.jsx` : consent state, Analytics conditionne, route 404
+- `frontend/src/index.css` : fonts import retire, transition specifique
+- `frontend/src/components/ClubGrid.jsx` : width/height img, club actif ring
+- `frontend/src/components/CookieBanner.jsx` : expiration 13 mois, resetCookieConsent, onConsentChange
+- `frontend/src/components/Footer.jsx` : contraste, bouton gerer cookies
+- `frontend/src/components/MatchGrid.jsx` : width/height img
+- `frontend/src/pages/Home.jsx` : section, contraste sous-titre
+- `frontend/src/pages/Vote.jsx` : section, contraste hints, "neutre"
+- `frontend/src/pages/Ranking.jsx` : section, aria-label
+- `frontend/src/pages/About.jsx` : section
+- `frontend/src/pages/Contact.jsx` : reecrit (mailto)
+- `frontend/src/pages/Privacy.jsx` : reecrit (RGPD complet)
+- `frontend/src/pages/Terms.jsx` : section
+
+---
+
+### Points restants a traiter (identifies par les 6 audits)
+
+**Priorite haute** :
+
+| # | Point | Complexite |
+|---|-------|------------|
+| 1 | **hashIp duplique** dans votesController.js et ipTracker.js → extraire en `utils/hashIp.js` | 5 min |
+| 2 | **`.env.example`** avec toutes les env vars documentees | 5 min |
+| 3 | **express.json({ limit: '10kb' })** pour limiter taille body | 2 min |
+| 4 | **Validate club/nationality** contre whitelists dans API ranking | 15 min |
+
+**Priorite moyenne** :
+
+| # | Point | Complexite |
+|---|-------|------------|
+| 5 | **N+1 queries getContexts()** : 18 COUNT distincts → 1 seul GROUP BY | 20 min |
+| 6 | **getRanking() SELECT *** : charger seulement les colonnes utiles | 10 min |
+| 7 | **Cookie banner padding** sur Vote mobile (boutons couverts) | 5 min |
+| 8 | **Cookie granularite** : consentement separe analytics vs pub | 30 min |
+| 9 | **Preuve consentement** cookies cote serveur (pas juste localStorage) | 1h |
+
+**Priorite basse (v1.2+)** :
+
+| # | Point | Complexite |
+|---|-------|------------|
+| 10 | **Purge cron voter_ip** en fin de saison (TTL donnees) | 30 min |
+| 11 | **FingerprintJS** anti-spam v1.1 (complement hash IP) | 2h |
+| 12 | **Sentry** monitoring erreurs production | 1h |
+| 13 | **Font-display: optional** (eliminer FOUT) | 5 min |
+
+---
 
 ### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match + Analytics + SEO
 
@@ -1158,11 +1262,44 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **BDD persistante** : migre vers Turso (libSQL cloud, region EU West)
 - [x] **Rate limit global** : 100 req/min sur /api/* (express-rate-limit)
 - [x] **Helmet** : headers secu (X-Frame-Options, HSTS, X-Content-Type-Options)
-- [x] **SQL interpolation** : supprimee dans votesController (3 requetes distinctes)
+- [x] **SQL interpolation** : supprimee dans votesController (3 requetes distinctes) + playersController (dateFilter)
 - [x] **Middleware erreur** : catch-all + unhandledRejection
 - [x] **Deps inutilisees** : puppeteer + cheerio supprimes (-134 packages)
 - [x] **Hash IP** (HMAC-SHA256) — conformite RGPD Article 32. Env var `IP_HASH_SECRET` a configurer sur Render
+- [x] **trust proxy** : `app.set('trust proxy', 1)` pour IP reelle derriere Render
+- [x] **asyncHandler** : toutes les routes async wrappees (plus de rejections silencieuses)
+- [x] **Admin auth Bearer** : support Authorization header (+ fallback query string)
+- [x] **IP_HASH_SECRET fail-fast** : crash au demarrage si absent en prod
+- [x] **Erreurs admin masquees** : plus de error.message dans les reponses API
+- [ ] **express.json({ limit })** : limiter taille body (pas encore fait)
+- [ ] **Validate club/nationality** contre whitelists dans ranking API
+- [ ] **hashIp duplique** : extraire en utils/ partage (votesController + ipTracker)
 - [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
+
+### RGPD (audit 10 fevrier 2026 nuit 3)
+
+- [x] **AdSense retire de index.html** (chargeait avant consentement)
+- [x] **Analytics conditionne** au consentement cookies
+- [x] **CookieBanner expiration 13 mois** + timestamp
+- [x] **resetCookieConsent** : bouton "Gerer mes cookies" dans Footer
+- [x] **Privacy.jsx RGPD complet** : bases legales, sous-traitants, transferts, droits, CNIL
+- [x] **Contact.jsx reecrit** : mailto (plus de faux formulaire)
+- [ ] **Cookie granularite** : consentement separe analytics vs publicite
+- [ ] **Preuve consentement** cookies cote serveur (pas juste localStorage)
+- [ ] **Purge cron voter_ip** en fin de saison
+
+### UX/Accessibilite (audit 10 fevrier 2026 nuit 3)
+
+- [x] **Double `<main>`** : pages en `<section>`, seul App.jsx a `<main>`
+- [x] **Contraste WCAG** : footer, hints, sous-titre Home
+- [x] **aria-label** : selects et input classement
+- [x] **Page 404** : NotFound.jsx + route catch-all
+- [x] **Club actif visible** : ring emerald dans ClubGrid
+- [x] **Fonts preconnect** : @import CSS → link HTML head
+- [x] **transition: all** → proprietes specifiques (perf)
+- [x] **width/height img** : MatchGrid + ClubGrid (anti-CLS)
+- [ ] **Cookie banner padding** sur Vote mobile (boutons couverts)
+- [ ] **Font-display: optional** (eliminer FOUT)
 
 ### Priorite haute (pour lancer le MVP)
 
@@ -1172,16 +1309,13 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **Deploiement** :
   - [x] Frontend sur Vercel : https://frontend-xtorbis-projects.vercel.app
   - [x] Backend sur Render : https://foot-vibes-api.onrender.com
-  - [ ] Configuration domaine footvibes.fr (optionnel)
+  - [x] Domaine topflop.fr configure (OVH + Vercel DNS)
 
-### Priorite moyenne (polish v1.1)
+### Performance (a traiter)
 
-- [ ] **Design** :
-  - [ ] Verifier responsive mobile (tester sur telephone)
-  - [x] Placeholder photo joueur : silhouette gris clair (#9ca3af) sur fond sombre
-- [ ] **Infra** :
-  - [x] BDD persistante (Turso libSQL cloud)
-  - [x] Nettoyage console.log en prod (1 seul log superflu supprime, reste = monitoring utile)
+- [ ] **N+1 queries getContexts()** : 18 COUNT distincts → 1 seul GROUP BY
+- [ ] **getRanking() SELECT *** : charger seulement les colonnes utiles
+- [ ] **.env.example** : documenter toutes les env vars
 
 ### Priorite basse (post-MVP v1.2+)
 
@@ -1191,6 +1325,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [ ] Legendes historiques (anciens joueurs L1)
 - [ ] Authentification utilisateurs (v2.0)
 - [ ] Comparaison joueurs (face a face)
+- [ ] Sentry monitoring erreurs production
 
 ---
 
@@ -1365,7 +1500,7 @@ node scripts/importTransfermarkt.js
 2. **Photos** : Utilise les photos de l'API (Transfermarkt ou API-Football)
 3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD hashee HMAC-SHA256 (200/jour) + 1 vote/joueur/IP/24h
 4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
-5. **Securite** : CORS restreint, admin key env-only, validation inputs, timeout fetch, helmet, rate limit global 100/min
+5. **Securite** : CORS restreint, admin key env-only (Bearer header), validation inputs, timeout fetch, helmet, rate limit global 100/min, trust proxy, asyncHandler, IP_HASH_SECRET fail-fast prod, erreurs masquees
 6. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
 7. **BDD** : Turso (libSQL cloud) en prod, fallback fichier local en dev. Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 8. **Env vars Render** : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `IP_HASH_SECRET`, `ADMIN_KEY`, `FOOTBALL_DATA_API_KEY`, `CORS_ORIGINS`
@@ -1417,3 +1552,9 @@ node scripts/importTransfermarkt.js
 | 10 fev 2026 | Bouton neutre : smiley meh (remplace pouce horizontal) |
 | 10 fev 2026 | Limite votes quotidiens : 200 → 500 |
 | 10 fev 2026 | Fix joueurs 0 match exclus de la selection aleatoire |
+| 10 fev 2026 | Audit 6 agents : 22 fixes secu/RGPD/UX en une session |
+| 10 fev 2026 | trust proxy + asyncHandler + Bearer auth admin + IP_HASH_SECRET fail-fast |
+| 10 fev 2026 | SQL dateFilter interpolation eliminee (parameterised queries) |
+| 10 fev 2026 | Privacy.jsx RGPD complet (bases legales, sous-traitants, transferts, CNIL) |
+| 10 fev 2026 | CookieBanner expiration 13 mois + resetCookieConsent + finalites |
+| 10 fev 2026 | Page 404, double main fixe, contraste WCAG, aria-label, fonts preconnect |

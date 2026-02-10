@@ -2,10 +2,15 @@ const crypto = require('crypto');
 const { queryOne } = require('../models/database');
 
 const MAX_VOTES_PER_DAY = 500;
-const IP_HASH_SECRET = process.env.IP_HASH_SECRET || 'topflop-default-salt-change-me';
+const IP_HASH_SECRET = process.env.IP_HASH_SECRET;
+if (!IP_HASH_SECRET && process.env.RENDER_EXTERNAL_URL) {
+  console.error('[FATAL] IP_HASH_SECRET env var is required in production');
+  process.exit(1);
+}
+const HASH_SECRET = IP_HASH_SECRET || 'dev-only-secret';
 
 function hashIp(ip) {
-  return crypto.createHmac('sha256', IP_HASH_SECRET).update(ip).digest('hex');
+  return crypto.createHmac('sha256', HASH_SECRET).update(ip).digest('hex');
 }
 
 async function checkIPLimit(req, res, next) {
