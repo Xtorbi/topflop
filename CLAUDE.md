@@ -16,6 +16,46 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 10 fevrier 2026 (apres-midi) - Migration BDD Turso
+
+**Migration sql.js → Turso (libSQL) pour BDD persistante** :
+- Probleme : BDD SQLite embarquee via sql.js, fichier ephemere perdu a chaque redeploy Render
+- Solution : migration vers Turso (libSQL cloud), BDD persistante en region EU West (Ireland)
+
+**Code migre** :
+- `@libsql/client` remplace `sql.js` dans package.json
+- `database.js` reecrit : `createClient()` avec fallback fichier local si pas de `TURSO_DATABASE_URL`
+- Tous les appelants migres en async/await (controllers, middleware, routes, scripts)
+- Script `migrateToTurso.js` : copie locale → cloud par batch de 50 rows
+
+**Donnees migrees** : 481 players, 245 votes, 23 matches
+
+**Configuration** :
+- Turso DB : `topflop` sur `aws-eu-west-1` (Ireland)
+- Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (dans `.env` local + Render)
+- Fallback : si pas de TURSO_DATABASE_URL, utilise `file:database/ligue1.db` (dev local)
+
+**Fichiers crees** :
+- `backend/scripts/migrateToTurso.js`
+- `backend/.env` (gitignore)
+
+**Fichiers modifies** :
+- `backend/models/database.js` : reecrit complet (sql.js → @libsql/client)
+- `backend/package.json` : sql.js → @libsql/client
+- `backend/server.js` : dotenv.config() simplifie
+- `backend/controllers/playersController.js` : async/await
+- `backend/controllers/votesController.js` : async/await
+- `backend/middleware/ipTracker.js` : async/await
+- `backend/routes/admin.js` : async/await
+- `backend/scripts/checkDb.js` : async/await
+- `backend/scripts/importTransfermarkt.js` : async/await
+- `backend/scripts/updateGoalkeeperStats.js` : async/await
+- `backend/scripts/verifyData.js` : async/await
+
+**Nettoyage** : suppression turso-cli/, zip, fichiers temporaires (auth, auth-wal, nul)
+
+---
+
 ### Session du 10 fevrier 2026 - Audit securite + Nettoyage
 
 **Audit securite complet du backend** (18 points analyses) :
@@ -45,7 +85,7 @@
 - Config clubs dupliquee frontend/backend → refacto future
 - Dependances CDN externes (flagcdn, AdSense) → acceptable
 - AdSense slots placeholders → attente validation Google
-- BDD ephemere sur Render free tier → migrer vers persistent storage quand budget
+- ~~BDD ephemere sur Render free tier~~ → FAIT : migre vers Turso (libSQL cloud)
 - Pas de risque XSS : React echappe par defaut, pas de `dangerouslySetInnerHTML`
 
 **Fichiers modifies** :
@@ -932,7 +972,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 | Element | Fichier | Statut | Notes |
 |---------|---------|--------|-------|
 | Serveur | `server.js` | OK | Express, CORS, init DB |
-| Database | `models/database.js` | OK | sql.js, auto-save, helpers (queryAll, queryOne, runSql) |
+| Database | `models/database.js` | OK | @libsql/client (Turso), async helpers (queryAll, queryOne, runSql) |
 | Config clubs | `config/clubs.js` | OK | 18 clubs L1 2025-2026 avec Transfermarkt IDs |
 | Routes players | `routes/players.js` | OK | /random, /players, /players/:id, /ranking, /contexts |
 | Routes votes | `routes/votes.js` | OK | POST /vote avec middlewares |
@@ -980,7 +1020,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **Timeout fetch** Football-Data (15s)
 - [x] **Nettoyage scripts morts** (36 supprimes)
 - [x] **SEO** : robots.txt + sitemap.xml
-- [ ] **BDD persistante** : migrer hors Render free tier (ephemere au redeploy)
+- [x] **BDD persistante** : migre vers Turso (libSQL cloud, region EU West)
 - [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
 
 ### Priorite haute (pour lancer le MVP)
@@ -999,7 +1039,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
   - [ ] Verifier responsive mobile (tester sur telephone)
   - [ ] Placeholder si photo joueur manquante (silhouette generique)
 - [ ] **Infra** :
-  - [ ] BDD persistante (Render free = ephemere au redeploy)
+  - [x] BDD persistante (Turso libSQL cloud)
   - [ ] Nettoyage console.log en prod
 
 ### Priorite basse (post-MVP v1.2+)
@@ -1051,7 +1091,8 @@ Avant deploiement, ajouter des features differenciantes :
 | Service | Usage | Coût |
 |---------|-------|------|
 | **Vercel** | Hébergement frontend | Gratuit |
-| **Render** | Hébergement backend + BDD | Gratuit |
+| **Render** | Hébergement backend | Gratuit |
+| **Turso** | BDD libSQL cloud (EU West) | Gratuit (500M reads, 10M writes) |
 | **GitHub** | Code source | Gratuit |
 | **Football-Data.org** | API matchs L1 (cron) | Gratuit (10 req/min) |
 | **cron-job.org** | Planification cron weekend | Gratuit |
@@ -1080,11 +1121,11 @@ Billboard/
 │   ├── tailwind.config.js
 │   └── vite.config.js
 │
-├── backend/                  # Node.js + Express + sql.js
+├── backend/                  # Node.js + Express + Turso (libSQL)
 │   ├── config/               # clubs.js (18 clubs L1)
 │   ├── controllers/          # playersController, votesController
 │   ├── middleware/           # rateLimiter, ipTracker
-│   ├── models/               # database.js (SQLite)
+│   ├── models/               # database.js (Turso/libSQL)
 │   ├── routes/               # players.js, votes.js
 │   ├── scripts/              # Import, scraping, verification
 │   └── server.js
@@ -1184,6 +1225,7 @@ node scripts/importTransfermarkt.js
 4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
 5. **Securite** : CORS restreint, admin key env-only, validation inputs, timeout fetch
 6. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
+7. **BDD** : Turso (libSQL cloud) en prod, fallback fichier local en dev. Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 
 ---
 
@@ -1192,7 +1234,7 @@ node scripts/importTransfermarkt.js
 | Date | Decision |
 |------|----------|
 | Janvier 2026 | Rebrand "Billboard" -> "Foot Vibes" |
-| Janvier 2026 | Choix stack : React + Vite + TailwindCSS / Express + SQLite |
+| Janvier 2026 | Choix stack : React + Vite + TailwindCSS / Express + SQLite (migre vers Turso 10 fev) |
 | Janvier 2026 | Wording votes : Pouce haut / Neutre / Pouce bas (icones) |
 | Janvier 2026 | Algo pondere par recence de match + popularite club |
 | Janvier 2026 | 18 clubs directement sur homepage (pas d'ecran intermediaire) |
@@ -1221,3 +1263,4 @@ node scripts/importTransfermarkt.js
 | 6 fev 2026 | Interstitiel tous les 10 votes, banners sur Home/Classement |
 | 10 fev 2026 | Audit securite : CORS, validation inputs, rate limit, ipTracker BDD |
 | 10 fev 2026 | Nettoyage 36 scripts morts, ajout sitemap/robots.txt SEO |
+| 10 fev 2026 | Migration BDD : sql.js → Turso (libSQL cloud, EU West, persistante) |
