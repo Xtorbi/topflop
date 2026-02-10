@@ -41,8 +41,11 @@ function VoteButtons({ onVote, disabled }) {
                    ${clickedButton === 'neutral' ? 'animate-vote-bounce' : ''}`}
         aria-label="Je ne sais pas"
       >
-        <svg className="w-7 h-7 sm:w-6 sm:h-6 -rotate-90" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z"/>
+        <svg className="w-7 h-7 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="10" r="1" fill="currentColor" stroke="none" />
+          <line x1="8" y1="15" x2="16" y2="15" strokeLinecap="round" />
         </svg>
       </button>
 
