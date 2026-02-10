@@ -16,7 +16,14 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
-### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf
+### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match
+
+**Fix joueurs 0 match proposes au vote** :
+- Bug : 41 joueurs avec `matches_played = 0` apparaissaient dans la selection aleatoire
+- Cause : le cron met `last_match_date` sur **tous les joueurs du club** quand le club joue, meme les remplacants qui n'ont jamais joue → ils atterrissaient dans le bucket "match recent" (80%)
+- Fix : ajout `AND matches_played > 0` dans la requete de `getRandomPlayer`
+- Exemple : Amadou Cisse (RC Strasbourg, 19 ans, 0 match) ne sera plus propose
+- Fichier : `backend/controllers/playersController.js`
 
 **3 quick wins perf/RGPD** :
 
