@@ -5,9 +5,12 @@ const { runSql } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
 
 // Clés secrètes
-const ADMIN_KEY = process.env.ADMIN_KEY || 'topflop-admin-2026';
+const ADMIN_KEY = process.env.ADMIN_KEY;
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 
+if (!ADMIN_KEY) {
+  console.warn('[ADMIN] ADMIN_KEY not set — admin endpoints will reject all requests');
+}
 if (!FOOTBALL_DATA_API_KEY) {
   console.warn('[ADMIN] FOOTBALL_DATA_API_KEY not set — cron will fail');
 }

@@ -11,7 +11,19 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5180', 'http://localhost:5185'];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, cron, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  }
+}));
 app.use(express.json());
 
 // Routes

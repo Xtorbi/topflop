@@ -42,8 +42,10 @@ function handleVote(req, res) {
     [player_id, vote, context, voterIp]);
 
   // Update player scores
-  const column = vote === 'up' ? 'upvotes' : vote === 'down' ? 'downvotes' : 'neutral_votes';
-  const scoreChange = vote === 'up' ? 1 : vote === 'down' ? -1 : 0;
+  const VOTE_COLUMNS = { up: 'upvotes', down: 'downvotes', neutral: 'neutral_votes' };
+  const VOTE_SCORES = { up: 1, down: -1, neutral: 0 };
+  const column = VOTE_COLUMNS[vote];
+  const scoreChange = VOTE_SCORES[vote];
 
   runSql(`
     UPDATE players
