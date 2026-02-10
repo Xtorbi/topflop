@@ -47,7 +47,7 @@ function Home() {
             Le baromètre des joueurs de Ligue 1
           </p>
           <p className="text-white/50 text-xs sm:text-sm mb-8">
-            Vote et découvre le classement · Saison 2025-2026
+            Vote en quelques secondes et découvre le classement
           </p>
 
           {/* CTA Buttons */}
