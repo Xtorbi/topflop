@@ -16,7 +16,19 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
-### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match + Analytics
+### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match + Analytics + SEO
+
+**Google Search Console** :
+- Propriete `www.topflop.fr` ajoutee et verifiee (balise meta)
+- `<meta name="google-site-verification" content="dge7QXBP0UF-pWyiOBGbA8nEfgr1aZY9AFBPCgSlYak" />`
+- Sitemap `sitemap.xml` soumis (7 URLs)
+- Fichier : `frontend/index.html`
+
+**AdSense** :
+- Site `topflop.fr` ajoute sur AdSense, statut "En preparation"
+- Script AdSense remis dans `index.html` (necessaire pour verification Google)
+- `ads.txt` cree dans `frontend/public/` (declare pub-5498498962137796 comme vendeur autorise)
+- Examen Google en cours (2-14 jours). Une fois approuve, passer `ADS_ENABLED = true`
 
 **Vercel Analytics** :
 - Package `@vercel/analytics` installe + `<Analytics />` dans App.jsx
