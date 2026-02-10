@@ -16,7 +16,22 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
-### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match
+### Session du 10 fevrier 2026 (nuit 2) - AdSense RGPD + Perf + Fix joueurs 0 match + Analytics
+
+**Vercel Analytics** :
+- Package `@vercel/analytics` installe + `<Analytics />` dans App.jsx
+- Tracking automatique des pages vues et Web Vitals
+- Dashboard : https://vercel.com → projet → Analytics
+- Fichier : `frontend/src/App.jsx`
+
+**Bouton neutre smiley meh** :
+- Remplace le pouce horizontal par un smiley neutre (visage + bouche droite)
+- SVG inline : cercle + 2 yeux + ligne droite
+- Fichier : `frontend/src/components/VoteButtons.jsx`
+
+**Limite votes quotidiens : 200 → 500** :
+- 440 joueurs actifs, 200/jour ne permettait pas de tous les voter
+- Fichier : `backend/middleware/ipTracker.js`
 
 **Fix joueurs 0 match proposes au vote** :
 - Bug : 41 joueurs avec `matches_played = 0` apparaissaient dans la selection aleatoire
@@ -1212,6 +1227,7 @@ Avant deploiement, ajouter des features differenciantes :
 | **cron-job.org** | Planification cron weekend | Gratuit |
 | **flagcdn.com** | Drapeaux nationalités | Gratuit (CDN public) |
 | **Google AdSense** | Monetisation pub | Gratuit (revenus au CPM) |
+| **Vercel Analytics** | Tracking pages vues + Web Vitals | Gratuit (2500 events/mois) |
 
 **APIs testées mais abandonnées :**
 - SofaScore : bloqué (Cloudflare 403)
@@ -1385,3 +1401,7 @@ node scripts/importTransfermarkt.js
 | 10 fev 2026 | Dimensions explicites sur toutes les images (anti-CLS) |
 | 10 fev 2026 | AdSense conditionne au consentement cookies (RGPD) |
 | 10 fev 2026 | Cache-Control sur API (60s ranking, 5min matchs, 10min contexts) |
+| 10 fev 2026 | Vercel Analytics integre (@vercel/analytics) |
+| 10 fev 2026 | Bouton neutre : smiley meh (remplace pouce horizontal) |
+| 10 fev 2026 | Limite votes quotidiens : 200 → 500 |
+| 10 fev 2026 | Fix joueurs 0 match exclus de la selection aleatoire |
