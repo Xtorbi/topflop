@@ -262,14 +262,14 @@ function Vote() {
 
             <VoteButtons onVote={handleVote} disabled={!!exitDirection} />
 
-            <p className="text-center text-white/40 text-sm mt-4">
+            <p className="text-center text-white/60 text-sm mt-4">
               Mes votes : {voteCount}
             </p>
 
-            <p className="sm:hidden text-center text-white/20 text-[10px] mt-4">
+            <p className="sm:hidden text-center text-white/40 text-xs mt-4">
               Swipe la carte pour voter
             </p>
-            <p className="hidden sm:block text-center text-white/20 text-[10px] mt-4">
+            <p className="hidden sm:block text-center text-white/40 text-xs mt-4">
               ← → pour voter · ↓ pour passer
             </p>
           </div>

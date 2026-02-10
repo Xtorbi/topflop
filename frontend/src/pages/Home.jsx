@@ -43,10 +43,10 @@ function Home() {
           </div>
 
           {/* Tagline */}
-          <p className="text-white/70 text-base sm:text-xl mb-2">
+          <p className="text-white/80 text-base sm:text-xl mb-2">
             Le baromètre des joueurs de Ligue 1
           </p>
-          <p className="text-white/40 text-xs sm:text-sm mb-8">
+          <p className="text-white/50 text-xs sm:text-sm mb-8">
             Vote et découvre le classement · Saison 2025-2026
           </p>
 

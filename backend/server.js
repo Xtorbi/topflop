@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const cron = require('node-cron');
@@ -12,7 +14,23 @@ const { updateMatches } = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Gere par Vercel cote frontend
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Rate limit global : 100 req/min par IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { error: 'Trop de requetes, reessaye dans 1 minute' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api', globalLimiter);
+
+// CORS
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : ['http://localhost:5180', 'http://localhost:5185'];
@@ -54,6 +72,16 @@ cron.schedule('0 19,23 * * 5,6,0', () => {
     console.error(`[CRON] Auto update-matches failed:`, err.message);
   });
 }, { timezone: 'Europe/Paris' });
+
+// Error handler global (catch-all)
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err.message);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
 
 // Init DB then start server
 initDb().then(() => {

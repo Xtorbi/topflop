@@ -19,8 +19,15 @@ function Ranking() {
   const [positionFilter, setPositionFilter] = useState('Tous');
   const [periodFilter, setPeriodFilter] = useState('season');
   const [frenchOnly, setFrenchOnly] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Debounce recherche : 300ms apres la derniere frappe
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     const load = async () => {
@@ -143,8 +150,8 @@ function Ranking() {
       <input
         type="text"
         placeholder="Rechercher un joueur..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl mb-4 sm:mb-6
                    text-sm sm:text-base text-white placeholder-white/30
                    focus:outline-none focus:border-fv-green/50 focus:bg-white/10
@@ -154,7 +161,7 @@ function Ranking() {
 
       {/* Stats globales */}
       {!loading && total > 0 && (
-        <p className="mb-4 text-sm text-white/50 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+        <p className="mb-4 text-sm text-white/60 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
           {total} joueurs classés · {totalUniqueVoters} votant{totalUniqueVoters > 1 ? 's' : ''} unique{totalUniqueVoters > 1 ? 's' : ''}
         </p>
       )}

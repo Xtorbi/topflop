@@ -41,20 +41,14 @@ async function handleVote(req, res) {
   await runSql('INSERT INTO votes (player_id, vote_type, context, voter_ip) VALUES (?, ?, ?, ?)',
     [player_id, vote, context, voterIp]);
 
-  // Update player scores
-  const VOTE_COLUMNS = { up: 'upvotes', down: 'downvotes', neutral: 'neutral_votes' };
-  const VOTE_SCORES = { up: 1, down: -1, neutral: 0 };
-  const column = VOTE_COLUMNS[vote];
-  const scoreChange = VOTE_SCORES[vote];
-
-  await runSql(`
-    UPDATE players
-    SET ${column} = ${column} + 1,
-        total_votes = total_votes + 1,
-        score = score + ?,
-        updated_at = datetime('now')
-    WHERE id = ?
-  `, [scoreChange, player_id]);
+  // Update player scores (requetes distinctes, pas d'interpolation)
+  if (vote === 'up') {
+    await runSql(`UPDATE players SET upvotes = upvotes + 1, total_votes = total_votes + 1, score = score + 1, updated_at = datetime('now') WHERE id = ?`, [player_id]);
+  } else if (vote === 'down') {
+    await runSql(`UPDATE players SET downvotes = downvotes + 1, total_votes = total_votes + 1, score = score - 1, updated_at = datetime('now') WHERE id = ?`, [player_id]);
+  } else {
+    await runSql(`UPDATE players SET neutral_votes = neutral_votes + 1, total_votes = total_votes + 1, updated_at = datetime('now') WHERE id = ?`, [player_id]);
+  }
 
   // Get updated player and new rank
   const updated = await queryOne('SELECT * FROM players WHERE id = ?', [player_id]);
