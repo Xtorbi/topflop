@@ -94,119 +94,120 @@ function findClubName(apiName) {
 }
 
 /**
- * Route pour mettre à jour les dates de match des joueurs
- * Utilise Football-Data.org API (gratuit, 10 req/min)
- * Appelée par cron-job.org tous les jours à 00h, 17h, 20h, 23h
+ * Logique de mise à jour des matchs (réutilisée par la route HTTP et le cron interne)
+ */
+async function updateMatches() {
+  const now = new Date();
+  const logs = [];
+
+  logs.push(`Starting update at ${now.toISOString()}`);
+
+  // Récupérer les matchs des 7 derniers jours + 10 prochains jours (inclut journée suivante)
+  const dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const dateFromStr = dateFrom.toISOString().split('T')[0];
+  const dateTo = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+  const dateToStr = dateTo.toISOString().split('T')[0];
+
+  // Appel API Football-Data.org - Ligue 1 (FL1) - tous statuts (FINISHED + SCHEDULED + TIMED)
+  const url = `https://api.football-data.org/v4/competitions/FL1/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`;
+  logs.push(`Fetching: ${url}`);
+
+  const response = await fetch(url, {
+    headers: {
+      'X-Auth-Token': FOOTBALL_DATA_API_KEY,
+    },
+  });
+
+  logs.push(`Response status: ${response.status}`);
+
+  if (!response.ok) {
+    const text = await response.text();
+    logs.push(`Error body: ${text.substring(0, 500)}`);
+    throw new Error(`Football-Data API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const matches = data.matches || [];
+  logs.push(`Matches found: ${matches.length}`);
+
+  const updatedClubs = [];
+  const unmatchedTeams = [];
+
+  for (const match of matches) {
+    const homeTeam = match.homeTeam?.name;
+    const awayTeam = match.awayTeam?.name;
+    const matchDate = match.utcDate; // ISO format
+
+    logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate} (${match.status})`);
+
+    // Mettre à jour les joueurs des deux équipes
+    const homeClubName = findClubName(homeTeam);
+    const awayClubName = findClubName(awayTeam);
+
+    // Seuls les matchs terminés mettent à jour last_match_date
+    if (match.status === 'FINISHED') {
+      for (const [teamName, clubName] of [[homeTeam, homeClubName], [awayTeam, awayClubName]]) {
+        if (clubName) {
+          runSql(
+            `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
+            [matchDate, clubName, CURRENT_SEASON]
+          );
+          updatedClubs.push({ club: clubName, matchDate, apiName: teamName });
+        } else if (teamName) {
+          unmatchedTeams.push(teamName);
+        }
+      }
+    } else {
+      if (!homeClubName && homeTeam) unmatchedTeams.push(homeTeam);
+      if (!awayClubName && awayTeam) unmatchedTeams.push(awayTeam);
+    }
+
+    // Persister le match en BDD
+    if (homeClubName && awayClubName) {
+      const homeScore = match.score?.fullTime?.home ?? null;
+      const awayScore = match.score?.fullTime?.away ?? null;
+      runSql(
+        `INSERT OR REPLACE INTO matches (football_data_id, home_club, away_club, home_score, away_score, match_date, matchday, status, season)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [match.id, homeClubName, awayClubName, homeScore, awayScore, matchDate, match.matchday || null, match.status || 'FINISHED', CURRENT_SEASON]
+      );
+    }
+  }
+
+  const summary = {
+    success: true,
+    matchesFound: matches.length,
+    clubsUpdated: updatedClubs.length,
+    updatedClubs,
+    unmatchedTeams: [...new Set(unmatchedTeams)],
+    timestamp: now.toISOString(),
+    logs,
+  };
+
+  lastCronResult = { ...summary, executedAt: now.toISOString() };
+  console.log(`[CRON] OK - ${matches.length} matchs, ${updatedClubs.length} clubs mis à jour`);
+  return summary;
+}
+
+/**
+ * Route HTTP pour déclencher manuellement la mise à jour
  */
 router.get('/update-matches', async (req, res) => {
   const { key } = req.query;
 
-  // Vérification de la clé admin
   if (key !== ADMIN_KEY) {
     console.warn(`[CRON] Unauthorized attempt at ${new Date().toISOString()}`);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const now = new Date();
-  const logs = [];
-
   try {
-    logs.push(`Starting update at ${now.toISOString()}`);
-
-    // Récupérer les matchs des 7 derniers jours + 10 prochains jours (inclut journée suivante)
-    const dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const dateFromStr = dateFrom.toISOString().split('T')[0];
-    const dateTo = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
-    const dateToStr = dateTo.toISOString().split('T')[0];
-
-    // Appel API Football-Data.org - Ligue 1 (FL1) - tous statuts (FINISHED + SCHEDULED + TIMED)
-    const url = `https://api.football-data.org/v4/competitions/FL1/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`;
-    logs.push(`Fetching: ${url}`);
-
-    const response = await fetch(url, {
-      headers: {
-        'X-Auth-Token': FOOTBALL_DATA_API_KEY,
-      },
-    });
-
-    logs.push(`Response status: ${response.status}`);
-
-    if (!response.ok) {
-      const text = await response.text();
-      logs.push(`Error body: ${text.substring(0, 500)}`);
-      throw new Error(`Football-Data API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const matches = data.matches || [];
-    logs.push(`Matches found: ${matches.length}`);
-
-    const updatedClubs = [];
-    const unmatchedTeams = [];
-
-    for (const match of matches) {
-      const homeTeam = match.homeTeam?.name;
-      const awayTeam = match.awayTeam?.name;
-      const matchDate = match.utcDate; // ISO format
-
-      logs.push(`Match: ${homeTeam} vs ${awayTeam} at ${matchDate} (${match.status})`);
-
-      // Mettre à jour les joueurs des deux équipes
-      const homeClubName = findClubName(homeTeam);
-      const awayClubName = findClubName(awayTeam);
-
-      // Seuls les matchs terminés mettent à jour last_match_date
-      if (match.status === 'FINISHED') {
-        for (const [teamName, clubName] of [[homeTeam, homeClubName], [awayTeam, awayClubName]]) {
-          if (clubName) {
-            runSql(
-              `UPDATE players SET last_match_date = ? WHERE club = ? AND source_season = ?`,
-              [matchDate, clubName, CURRENT_SEASON]
-            );
-            updatedClubs.push({ club: clubName, matchDate, apiName: teamName });
-          } else if (teamName) {
-            unmatchedTeams.push(teamName);
-          }
-        }
-      } else {
-        if (!homeClubName && homeTeam) unmatchedTeams.push(homeTeam);
-        if (!awayClubName && awayTeam) unmatchedTeams.push(awayTeam);
-      }
-
-      // Persister le match en BDD
-      if (homeClubName && awayClubName) {
-        const homeScore = match.score?.fullTime?.home ?? null;
-        const awayScore = match.score?.fullTime?.away ?? null;
-        runSql(
-          `INSERT OR REPLACE INTO matches (football_data_id, home_club, away_club, home_score, away_score, match_date, matchday, status, season)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [match.id, homeClubName, awayClubName, homeScore, awayScore, matchDate, match.matchday || null, match.status || 'FINISHED', CURRENT_SEASON]
-        );
-      }
-    }
-
-    const summary = {
-      success: true,
-      matchesFound: matches.length,
-      clubsUpdated: updatedClubs.length,
-      updatedClubs,
-      unmatchedTeams: [...new Set(unmatchedTeams)],
-      timestamp: now.toISOString(),
-      logs,
-    };
-
-    lastCronResult = { ...summary, executedAt: now.toISOString() };
-    console.log(`[CRON] OK - ${matches.length} matchs, ${updatedClubs.length} clubs mis à jour`);
+    const summary = await updateMatches();
     res.json(summary);
   } catch (error) {
+    const now = new Date();
     lastCronResult = { success: false, error: error.message, executedAt: now.toISOString() };
     console.error(`[CRON] ERREUR at ${now.toISOString()}:`, error.message);
-    logs.push(`Error: ${error.message}`);
-    res.status(500).json({
-      error: error.message,
-      logs,
-      timestamp: now.toISOString(),
-    });
+    res.status(500).json({ error: error.message, timestamp: now.toISOString() });
   }
 });
 
@@ -259,3 +260,4 @@ router.get('/cron-status', (req, res) => {
 });
 
 module.exports = router;
+module.exports.updateMatches = updateMatches;

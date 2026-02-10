@@ -2,10 +2,12 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config({ path: '../.env' });
 
+const cron = require('node-cron');
 const { initDb } = require('./models/database');
 const playersRoutes = require('./routes/players');
 const votesRoutes = require('./routes/votes');
 const adminRoutes = require('./routes/admin');
+const { updateMatches } = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -45,10 +47,19 @@ if (RENDER_URL) {
   }, 14 * 60 * 1000);
 }
 
+// Cron interne : mise à jour matchs ven/sam/dim à 19h et 23h (Europe/Paris)
+cron.schedule('0 19,23 * * 5,6,0', () => {
+  console.log(`[CRON] Auto update-matches at ${new Date().toISOString()}`);
+  updateMatches().catch(err => {
+    console.error(`[CRON] Auto update-matches failed:`, err.message);
+  });
+}, { timezone: 'Europe/Paris' });
+
 // Init DB then start server
 initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Topflop API running on port ${PORT}`);
+    console.log(`[CRON] Scheduled: update-matches Fri/Sat/Sun at 19h & 23h Europe/Paris`);
     if (RENDER_URL) console.log(`Keep-alive enabled for ${RENDER_URL}`);
   });
 }).catch(err => {
