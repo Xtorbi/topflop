@@ -116,6 +116,7 @@ async function updateMatches() {
     headers: {
       'X-Auth-Token': FOOTBALL_DATA_API_KEY,
     },
+    signal: AbortSignal.timeout(15000), // 15s timeout
   });
 
   logs.push(`Response status: ${response.status}`);

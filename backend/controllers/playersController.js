@@ -1,6 +1,17 @@
 const { queryAll, queryOne } = require('../models/database');
 const { CURRENT_SEASON, CLUB_POPULARITY, L1_CLUBS } = require('../config/clubs');
 
+const VALID_POSITIONS = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant'];
+const VALID_PERIODS = ['week', 'month'];
+const MAX_LIMIT = 100;
+const MAX_SEARCH_LENGTH = 50;
+
+function sanitizeInt(val, defaultVal, min = 0, max = MAX_LIMIT) {
+  const n = parseInt(val, 10);
+  if (isNaN(n) || n < min) return defaultVal;
+  return Math.min(n, max);
+}
+
 function getRandomPlayer(req, res) {
   const { context = 'ligue1', exclude = '' } = req.query;
   const excludeIds = exclude ? exclude.split(',').map(Number) : [];
@@ -124,14 +135,16 @@ function getRandomPlayer(req, res) {
 }
 
 function getPlayers(req, res) {
-  const { position, club, search, limit = '50', offset = '0' } = req.query;
+  const { position, club, search, limit: rawLimit = '50', offset: rawOffset = '0' } = req.query;
+  const limit = sanitizeInt(rawLimit, 50);
+  const offset = sanitizeInt(rawOffset, 0, 0, 10000);
 
   let query = `SELECT * FROM players WHERE source_season = ? AND archived = 0`;
   let countQuery = `SELECT COUNT(*) as total FROM players WHERE source_season = ? AND archived = 0`;
   const params = [CURRENT_SEASON];
   const countParams = [CURRENT_SEASON];
 
-  if (position) {
+  if (position && VALID_POSITIONS.includes(position)) {
     query += ' AND position = ?';
     countQuery += ' AND position = ?';
     params.push(position);
@@ -146,14 +159,15 @@ function getPlayers(req, res) {
   }
 
   if (search) {
+    const cleanSearch = search.slice(0, MAX_SEARCH_LENGTH);
     query += ' AND name LIKE ?';
     countQuery += ' AND name LIKE ?';
-    params.push(`%${search}%`);
-    countParams.push(`%${search}%`);
+    params.push(`%${cleanSearch}%`);
+    countParams.push(`%${cleanSearch}%`);
   }
 
   query += ' ORDER BY score DESC LIMIT ? OFFSET ?';
-  params.push(parseInt(limit, 10), parseInt(offset, 10));
+  params.push(limit, offset);
 
   const players = queryAll(query, params);
   const row = queryOne(countQuery, countParams);
@@ -179,7 +193,9 @@ function getPlayerById(req, res) {
 }
 
 function getRanking(req, res) {
-  const { context, position, club, search, period, nationality, limit = '50', offset = '0' } = req.query;
+  const { context, position, club, search, period, nationality, limit: rawLimit = '50', offset: rawOffset = '0' } = req.query;
+  const limit = sanitizeInt(rawLimit, 50);
+  const offset = sanitizeInt(rawOffset, 0, 0, 10000);
 
   // Calcul de la date de début selon la période
   let dateFilter = null;
@@ -247,7 +263,7 @@ function getRanking(req, res) {
     }
   }
 
-  if (position) {
+  if (position && VALID_POSITIONS.includes(position)) {
     query += ` AND ${col}position = ?`;
     countQuery += ` AND ${col}position = ?`;
     params.push(position);
@@ -262,10 +278,11 @@ function getRanking(req, res) {
   }
 
   if (search) {
+    const cleanSearch = search.slice(0, MAX_SEARCH_LENGTH);
     query += ` AND ${col}name LIKE ?`;
     countQuery += ` AND ${col}name LIKE ?`;
-    params.push(`%${search}%`);
-    countParams.push(`%${search}%`);
+    params.push(`%${cleanSearch}%`);
+    countParams.push(`%${cleanSearch}%`);
   }
 
   if (nationality) {
@@ -281,7 +298,7 @@ function getRanking(req, res) {
   } else {
     query += ' ORDER BY score DESC LIMIT ? OFFSET ?';
   }
-  params.push(parseInt(limit, 10), parseInt(offset, 10));
+  params.push(limit, offset);
 
   const players = queryAll(query, params);
   const row = queryOne(countQuery, countParams);
