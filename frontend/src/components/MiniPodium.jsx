@@ -31,7 +31,7 @@ function PodiumPlayer({ player, rank }) {
       {/* Photo */}
       <div className={`${photoSize} rounded-full overflow-hidden border-2 ${borderOpacity} bg-white/10`}>
         {player.photo_url ? (
-          <img src={player.photo_url} alt={player.name} className="w-full h-full object-cover" />
+          <img src={player.photo_url} alt={player.name} width="80" height="80" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/30">
             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@ function PodiumPlayer({ player, rank }) {
 
       {/* Club logo */}
       {clubLogo && (
-        <img src={clubLogo} alt={player.club} className="w-4 h-4 sm:w-5 sm:h-5 mt-1 object-contain" />
+        <img src={clubLogo} alt={player.club} width="20" height="20" className="w-4 h-4 sm:w-5 sm:h-5 mt-1 object-contain" />
       )}
 
       {/* Score */}

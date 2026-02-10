@@ -369,7 +369,9 @@ function RankingTable({ players, adInterval = 0 }) {
               {getFlag(player.nationality) && (
                 <img
                   src={getFlag(player.nationality)}
-                  alt={player.nationality}
+                  alt={`Drapeau ${player.nationality}`}
+                  width="16"
+                  height="12"
                   className="w-4 h-3 object-cover"
                 />
               )}

@@ -170,6 +170,11 @@ function Ranking() {
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/10 border-t-fv-green" />
         </div>
+      ) : players.length === 0 ? (
+        <div className="text-center py-12 animate-fade-in-up">
+          <p className="text-white/60 text-lg mb-2">Aucun resultat</p>
+          <p className="text-white/40 text-sm">Essaye une autre recherche ou modifie les filtres</p>
+        </div>
       ) : (
         <>
           <RankingTable players={players} adInterval={25} />

@@ -1,11 +1,19 @@
+const crypto = require('crypto');
 const { queryOne, runSql } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
+
+const IP_HASH_SECRET = process.env.IP_HASH_SECRET || 'topflop-default-salt-change-me';
+
+function hashIp(ip) {
+  return crypto.createHmac('sha256', IP_HASH_SECRET).update(ip).digest('hex');
+}
 
 async function handleVote(req, res) {
   const { player_id, vote, context = 'ligue1' } = req.body;
 
-  // Récupérer l'IP du votant (compatible proxies comme Render/Vercel)
-  const voterIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || 'unknown';
+  // Récupérer l'IP du votant puis la hasher (RGPD)
+  const rawIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || 'unknown';
+  const voterIp = hashIp(rawIp);
 
   // Validation
   if (!player_id || !['up', 'neutral', 'down'].includes(vote)) {

@@ -83,7 +83,6 @@ function findClubName(apiName) {
       // Chercher un club avec cette ville dans les valeurs du mapping
       for (const [key, value] of Object.entries(FOOTBALLDATA_TO_DB)) {
         if (value.toLowerCase().includes(city.toLowerCase())) {
-          console.log(`[MATCH FALLBACK] "${apiName}" -> "${value}" (via city: ${city})`);
           return value;
         }
       }

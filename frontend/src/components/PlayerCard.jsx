@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { CLUB_LOGOS } from '../config/clubs';
 
-// Placeholder SVG en base64
-const PLACEHOLDER_PHOTO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='20' fill='%234a5568'/%3E%3Cellipse cx='50' cy='85' rx='30' ry='25' fill='%234a5568'/%3E%3C/svg%3E";
+// Placeholder SVG en base64 (silhouette claire sur fond sombre)
+const PLACEHOLDER_PHOTO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='20' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='85' rx='30' ry='25' fill='%239ca3af'/%3E%3C/svg%3E";
 
 // URLs de photos par défaut à ignorer (Transfermarkt placeholder)
 const isDefaultPhoto = (url) => {
@@ -104,6 +104,8 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteCount =
             <img
               src={isDefaultPhoto(player.photo_url) ? PLACEHOLDER_PHOTO : player.photo_url}
               alt={player.name}
+              width="80"
+              height="80"
               className="w-full h-full object-cover"
               onError={(e) => { e.target.src = PLACEHOLDER_PHOTO; }}
             />
@@ -121,7 +123,7 @@ function PlayerCard({ player, animate = false, exitDirection = null, voteCount =
         {/* Club */}
         <div className="flex justify-center items-center gap-2 pt-1 pb-3">
           {clubLogo && (
-            <img src={clubLogo} alt={player.club} className="w-4 h-4 object-contain" />
+            <img src={clubLogo} alt={player.club} width="16" height="16" className="w-4 h-4 object-contain" />
           )}
           <p className="text-white/50 text-xs">{formatClubName(player.club)}</p>
         </div>
