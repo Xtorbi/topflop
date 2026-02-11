@@ -161,7 +161,7 @@ function Vote() {
   const currentPlayer = stack[0];
   const nextPlayer = stack[1];
   return (
-    <section className={`h-dvh h-screen pt-14 ${bgStyle} px-4 flex flex-col justify-center`}>
+    <section className={`h-dvh h-screen pt-14 pb-24 sm:pb-4 ${bgStyle} px-4 flex flex-col justify-center`}>
       {showMilestone && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center pt-20">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-6 text-center max-w-xs mx-4 animate-bounce-in shadow-material-4">

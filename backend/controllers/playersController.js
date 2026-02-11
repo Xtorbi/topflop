@@ -3,6 +3,7 @@ const { CURRENT_SEASON, CLUB_POPULARITY, L1_CLUBS } = require('../config/clubs')
 
 const VALID_POSITIONS = ['Gardien', 'Defenseur', 'Milieu', 'Attaquant'];
 const VALID_PERIODS = ['week', 'month'];
+const VALID_CLUBS = new Set(L1_CLUBS.map(c => c.name));
 const MAX_LIMIT = 100;
 const MAX_SEARCH_LENGTH = 50;
 
@@ -179,7 +180,7 @@ async function getPlayers(req, res) {
     countParams.push(position);
   }
 
-  if (club) {
+  if (club && VALID_CLUBS.has(club)) {
     query += ' AND club = ?';
     countQuery += ' AND club = ?';
     params.push(club);
@@ -238,10 +239,13 @@ async function getRanking(req, res) {
   const params = [];
   const countParams = [];
 
+  // Les deux branches utilisent le prefixe p.
+  const col = 'p.';
+
   if (dateFrom) {
     // Score calculé dynamiquement sur la période
     query = `
-      SELECT p.*,
+      SELECT p.id, p.name, p.club, p.position, p.nationality,
         COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 WHEN v.vote_type = 'down' THEN -1 ELSE 0 END), 0) as period_score,
         COUNT(v.id) as period_votes,
         COUNT(DISTINCT v.voter_ip) as unique_voters,
@@ -260,26 +264,23 @@ async function getRanking(req, res) {
     params.push(dateFrom, CURRENT_SEASON);
     countParams.push(dateFrom, CURRENT_SEASON);
   } else {
-    // Score total (comportement actuel)
+    // Score total — colonnes utiles uniquement
     query = `
-      SELECT *,
-        ROW_NUMBER() OVER (ORDER BY score DESC) as rank,
-        (SELECT COUNT(DISTINCT voter_ip) FROM votes WHERE player_id = players.id) as unique_voters
-      FROM players
-      WHERE source_season = ?
-        AND archived = 0
-        AND total_votes >= 1
+      SELECT p.id, p.name, p.club, p.position, p.nationality, p.score, p.total_votes,
+        ROW_NUMBER() OVER (ORDER BY p.score DESC) as rank,
+        (SELECT COUNT(DISTINCT voter_ip) FROM votes WHERE player_id = p.id) as unique_voters
+      FROM players p
+      WHERE p.source_season = ?
+        AND p.archived = 0
+        AND p.total_votes >= 1
     `;
     countQuery = `
-      SELECT COUNT(*) as total FROM players
-      WHERE source_season = ? AND archived = 0 AND total_votes >= 1
+      SELECT COUNT(*) as total FROM players p
+      WHERE p.source_season = ? AND p.archived = 0 AND p.total_votes >= 1
     `;
     params.push(CURRENT_SEASON);
     countParams.push(CURRENT_SEASON);
   }
-
-  // Préfixe pour les colonnes (p. si période, rien sinon)
-  const col = dateFrom ? 'p.' : '';
 
   if (context && context !== 'ligue1') {
     const clubData = L1_CLUBS.find(c => c.id === context);
@@ -298,7 +299,7 @@ async function getRanking(req, res) {
     countParams.push(position);
   }
 
-  if (club) {
+  if (club && VALID_CLUBS.has(club)) {
     query += ` AND ${col}club = ?`;
     countQuery += ` AND ${col}club = ?`;
     params.push(club);
@@ -313,7 +314,7 @@ async function getRanking(req, res) {
     countParams.push(`%${cleanSearch}%`);
   }
 
-  if (nationality) {
+  if (nationality && /^[\p{L}\s'-]+$/u.test(nationality) && nationality.length <= 50) {
     query += ` AND ${col}nationality = ?`;
     countQuery += ` AND ${col}nationality = ?`;
     params.push(nationality);
@@ -350,22 +351,26 @@ async function getRanking(req, res) {
 }
 
 async function getContexts(req, res) {
-  const totalRow = await queryOne(`
-    SELECT COUNT(*) as count FROM players
+  // 1 seule requete GROUP BY au lieu de 18+1 requetes separees
+  const rows = await queryAll(`
+    SELECT club, COUNT(*) as count FROM players
     WHERE source_season = ? AND archived = 0
+    GROUP BY club
   `, [CURRENT_SEASON]);
 
+  const clubCounts = {};
+  let total = 0;
+  for (const row of rows) {
+    clubCounts[row.club] = row.count;
+    total += row.count;
+  }
+
   const contexts = [
-    { id: 'ligue1', name: 'Ligue 1 complete', player_count: totalRow ? totalRow.count : 0 },
+    { id: 'ligue1', name: 'Ligue 1 complete', player_count: total },
   ];
 
   for (const club of L1_CLUBS) {
-    const row = await queryOne(`
-      SELECT COUNT(*) as count FROM players
-      WHERE club = ? AND source_season = ? AND archived = 0
-    `, [club.name, CURRENT_SEASON]);
-
-    contexts.push({ id: club.id, name: club.shortName, player_count: row ? row.count : 0 });
+    contexts.push({ id: club.id, name: club.shortName, player_count: clubCounts[club.name] || 0 });
   }
 
   res.json({ contexts });
