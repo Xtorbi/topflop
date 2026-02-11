@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 10 fevrier 2026 (nuit 3)
+**Derniere mise a jour** : 11 fevrier 2026
 
 ---
 
@@ -15,6 +15,58 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 11 fevrier 2026 - Quick wins + Perf + Mercato hiver
+
+**4 quick wins** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **hashIp partage** : extrait de votesController+ipTracker vers `utils/hashIp.js` | `utils/hashIp.js`, `votesController.js`, `ipTracker.js` |
+| 2 | **`.env.example`** avec toutes les env vars documentees | `.env.example` |
+| 3 | **`express.json({ limit: '10kb' })`** protection body oversized | `server.js` |
+| 4 | **`display=optional`** Google Fonts (elimine FOUT) | `index.html` |
+
+**4 fixes perf/validation** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 5 | **Validate club** contre whitelist `VALID_CLUBS` (getPlayers + getRanking) | `playersController.js` |
+| 6 | **Validate nationality** regex unicode (lettres/espaces/tirets) | `playersController.js` |
+| 7 | **N+1 getContexts()** : 19 requetes → 1 seule GROUP BY | `playersController.js` |
+| 8 | **getRanking() SELECT *** → 7 colonnes specifiques | `playersController.js` |
+| 9 | **Cookie banner padding** Vote mobile `pb-24` | `Vote.jsx` |
+
+**Mercato hiver 2025-2026** :
+
+16 joueurs archives (departs hors L1) :
+- Ilenikhena (Monaco → Al-Ittihad 33M), Bakola/Garcia/O'Riley/Gomes (OM → Serie A/PL)
+- Mvuka (Lorient → Celtic), Guilavogui (Lens → MLS), Fofana (Rennes → Porto)
+- Molebe/A. Gomes (Lyon → L2), Sabaly/Mbaye/I. Sane (Metz → MLS/Belgique/L2)
+- M. Sarr (Strasbourg → Chelsea 20M), Le Cardinal (Brest → L2), Hamulic (Toulouse → Grece)
+
+6 transferts intra-L1 :
+- Kamara: PSG → Lyon, Abdelli: Angers → OM, Edjouma: Toulouse → Lille
+- Michal: Monaco → Metz, A. Sylla: Strasbourg → Nantes, Mwanga: Nantes → Strasbourg
+
+481 → 465 joueurs actifs.
+
+**Fichiers crees** :
+- `backend/utils/hashIp.js` : hashIp partage (HMAC-SHA256)
+- `backend/.env.example` : documentation env vars
+- `backend/scripts/winterTransfers.js` : script mercato hiver
+- `backend/scripts/listPlayers.js` : listing joueurs par club
+
+**Fichiers modifies** :
+- `backend/controllers/playersController.js` : VALID_CLUBS, regex nationality, GROUP BY contexts, SELECT slim ranking
+- `backend/controllers/votesController.js` : import hashIp depuis utils/
+- `backend/middleware/ipTracker.js` : import hashIp depuis utils/
+- `backend/server.js` : express.json limit 10kb
+- `backend/database/ligue1.db` : 16 archives + 6 club updates
+- `frontend/index.html` : display=optional fonts
+- `frontend/src/pages/Vote.jsx` : pb-24 cookie banner mobile
+
+---
 
 ### Session du 10 fevrier 2026 (nuit 3) - Audit 6 agents + 22 fixes secu/RGPD/UX
 
@@ -90,33 +142,17 @@
 
 ### Points restants a traiter (identifies par les 6 audits)
 
-**Priorite haute** :
+~~Haute priorite (1-4) et moyenne (5-7) : tous traites session 11 fevrier 2026.~~
+
+**Nice-to-have (v1.2+, non urgents)** :
 
 | # | Point | Complexite |
 |---|-------|------------|
-| 1 | **hashIp duplique** dans votesController.js et ipTracker.js → extraire en `utils/hashIp.js` | 5 min |
-| 2 | **`.env.example`** avec toutes les env vars documentees | 5 min |
-| 3 | **express.json({ limit: '10kb' })** pour limiter taille body | 2 min |
-| 4 | **Validate club/nationality** contre whitelists dans API ranking | 15 min |
-
-**Priorite moyenne** :
-
-| # | Point | Complexite |
-|---|-------|------------|
-| 5 | **N+1 queries getContexts()** : 18 COUNT distincts → 1 seul GROUP BY | 20 min |
-| 6 | **getRanking() SELECT *** : charger seulement les colonnes utiles | 10 min |
-| 7 | **Cookie banner padding** sur Vote mobile (boutons couverts) | 5 min |
-| 8 | **Cookie granularite** : consentement separe analytics vs pub | 30 min |
-| 9 | **Preuve consentement** cookies cote serveur (pas juste localStorage) | 1h |
-
-**Priorite basse (v1.2+)** :
-
-| # | Point | Complexite |
-|---|-------|------------|
-| 10 | **Purge cron voter_ip** en fin de saison (TTL donnees) | 30 min |
-| 11 | **FingerprintJS** anti-spam v1.1 (complement hash IP) | 2h |
-| 12 | **Sentry** monitoring erreurs production | 1h |
-| 13 | **Font-display: optional** (eliminer FOUT) | 5 min |
+| 1 | **Cookie granularite** : consentement separe analytics vs pub | 30 min |
+| 2 | **Preuve consentement** cookies cote serveur (pas juste localStorage) | 1h |
+| 3 | **Purge cron voter_ip** en fin de saison (TTL donnees) | 30 min |
+| 4 | **FingerprintJS** anti-spam v1.1 (complement hash IP) | 2h |
+| 5 | **Sentry** monitoring erreurs production | 1h |
 
 ---
 
@@ -1166,7 +1202,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 ## Donnees en base
 
 **Import du 2 fevrier 2026** via Transfermarkt :
-- **481 joueurs** des 18 clubs de L1 2025-2026
+- **465 joueurs actifs** des 18 clubs de L1 2025-2026 (481 importes, 16 archives mercato hiver)
 - **440 joueurs** avec au moins 1 match joue
 - Stats a jour (buts, passes, matchs)
 - Photos OK
@@ -1271,9 +1307,9 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **Admin auth Bearer** : support Authorization header (+ fallback query string)
 - [x] **IP_HASH_SECRET fail-fast** : crash au demarrage si absent en prod
 - [x] **Erreurs admin masquees** : plus de error.message dans les reponses API
-- [ ] **express.json({ limit })** : limiter taille body (pas encore fait)
-- [ ] **Validate club/nationality** contre whitelists dans ranking API
-- [ ] **hashIp duplique** : extraire en utils/ partage (votesController + ipTracker)
+- [x] **express.json({ limit: '10kb' })** : body oversized bloque
+- [x] **Validate club/nationality** contre whitelists dans ranking API
+- [x] **hashIp partage** : extrait en `utils/hashIp.js` (plus de duplication)
 - [ ] **Browser fingerprinting** (FingerprintJS) — anti-spam v1.1
 
 ### RGPD (audit 10 fevrier 2026 nuit 3)
@@ -1298,8 +1334,8 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 - [x] **Fonts preconnect** : @import CSS → link HTML head
 - [x] **transition: all** → proprietes specifiques (perf)
 - [x] **width/height img** : MatchGrid + ClubGrid (anti-CLS)
-- [ ] **Cookie banner padding** sur Vote mobile (boutons couverts)
-- [ ] **Font-display: optional** (eliminer FOUT)
+- [x] **Cookie banner padding** sur Vote mobile (`pb-24`)
+- [x] **Font-display: optional** (elimine FOUT)
 
 ### Priorite haute (pour lancer le MVP)
 
@@ -1311,11 +1347,11 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
   - [x] Backend sur Render : https://foot-vibes-api.onrender.com
   - [x] Domaine topflop.fr configure (OVH + Vercel DNS)
 
-### Performance (a traiter)
+### Performance (traite 11 fevrier 2026)
 
-- [ ] **N+1 queries getContexts()** : 18 COUNT distincts → 1 seul GROUP BY
-- [ ] **getRanking() SELECT *** : charger seulement les colonnes utiles
-- [ ] **.env.example** : documenter toutes les env vars
+- [x] **N+1 queries getContexts()** : 19 requetes → 1 seul GROUP BY
+- [x] **getRanking() SELECT *** → 7 colonnes specifiques
+- [x] **.env.example** : toutes les env vars documentees
 
 ### Priorite basse (post-MVP v1.2+)
 
@@ -1558,3 +1594,6 @@ node scripts/importTransfermarkt.js
 | 10 fev 2026 | Privacy.jsx RGPD complet (bases legales, sous-traitants, transferts, CNIL) |
 | 10 fev 2026 | CookieBanner expiration 13 mois + resetCookieConsent + finalites |
 | 10 fev 2026 | Page 404, double main fixe, contraste WCAG, aria-label, fonts preconnect |
+| 11 fev 2026 | Quick wins : hashIp partage, .env.example, body limit 10kb, font-display optional |
+| 11 fev 2026 | Perf : N+1 getContexts → GROUP BY, SELECT slim ranking, validate club/nationality |
+| 11 fev 2026 | Mercato hiver : 16 archives (departs hors L1), 6 transferts intra-L1 (481→465 joueurs) |
