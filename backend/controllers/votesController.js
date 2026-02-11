@@ -1,17 +1,6 @@
-const crypto = require('crypto');
 const { queryOne, runSql } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
-
-const IP_HASH_SECRET = process.env.IP_HASH_SECRET;
-if (!IP_HASH_SECRET && process.env.RENDER_EXTERNAL_URL) {
-  console.error('[FATAL] IP_HASH_SECRET env var is required in production');
-  process.exit(1);
-}
-const HASH_SECRET = IP_HASH_SECRET || 'dev-only-secret';
-
-function hashIp(ip) {
-  return crypto.createHmac('sha256', HASH_SECRET).update(ip).digest('hex');
-}
+const { hashIp } = require('../utils/hashIp');
 
 async function handleVote(req, res) {
   const { player_id, vote, context = 'ligue1' } = req.body;
