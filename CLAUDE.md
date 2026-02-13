@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 11 fevrier 2026
+**Derniere mise a jour** : 13 fevrier 2026
 
 ---
 
@@ -15,6 +15,22 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 13 fevrier 2026 - Fix photos podium + hover cartes matchs
+
+**3 fixes UI** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **Photos MiniPodium restaurees** : `photo_url` manquait dans le SELECT de `getRanking` (2 branches : saison + periode) — les medaillons affichaient la silhouette au lieu des photos joueurs | `playersController.js` |
+| 2 | **Lisere vert cartes matchs** : `border-2` sur toutes les cartes (transparent par defaut, `border-fv-green/30` pour matchs du jour, `hover:border-fv-green/60` au survol) — remplace `ring-1` qui ne couvrait pas bien la carte | `MatchGrid.jsx` |
+| 3 | **Suppression hover:scale-105** sur cartes matchs — le zoom cassait le rendu du lisere. Transition limitee a `transition-colors` | `MatchGrid.jsx` |
+
+**Fichiers modifies** :
+- `backend/controllers/playersController.js` : ajout `p.photo_url` dans les 2 SELECT de getRanking
+- `frontend/src/components/MatchGrid.jsx` : border-2 + hover border vert + suppression scale
+
+---
 
 ### Session du 11 fevrier 2026 - Quick wins + Perf + Mercato hiver
 
