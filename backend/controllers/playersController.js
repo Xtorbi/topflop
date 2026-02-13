@@ -245,7 +245,7 @@ async function getRanking(req, res) {
   if (dateFrom) {
     // Score calculé dynamiquement sur la période
     query = `
-      SELECT p.id, p.name, p.club, p.position, p.nationality,
+      SELECT p.id, p.name, p.club, p.position, p.nationality, p.photo_url,
         COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 WHEN v.vote_type = 'down' THEN -1 ELSE 0 END), 0) as period_score,
         COUNT(v.id) as period_votes,
         COUNT(DISTINCT v.voter_ip) as unique_voters,
@@ -266,7 +266,7 @@ async function getRanking(req, res) {
   } else {
     // Score total — colonnes utiles uniquement
     query = `
-      SELECT p.id, p.name, p.club, p.position, p.nationality, p.score, p.total_votes,
+      SELECT p.id, p.name, p.club, p.position, p.nationality, p.photo_url, p.score, p.total_votes,
         ROW_NUMBER() OVER (ORDER BY p.score DESC) as rank,
         (SELECT COUNT(DISTINCT voter_ip) FROM votes WHERE player_id = p.id) as unique_voters
       FROM players p

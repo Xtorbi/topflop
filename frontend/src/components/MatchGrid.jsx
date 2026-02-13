@@ -147,7 +147,7 @@ function MatchGrid() {
               onClick={() => handleMatchClick(match)}
               className={`flex-shrink-0 snap-start bg-white/10 backdrop-blur-sm rounded-2xl
                          px-3 sm:px-5 py-3 sm:py-4 min-w-[160px] sm:min-w-[190px]
-                         hover:bg-white/15 hover:scale-105 active:scale-95
+                         hover:bg-white/15 hover:scale-105 hover:ring-2 hover:ring-fv-green/60 active:scale-95
                          transition-all duration-200
                          ${info.isToday ? 'ring-1 ring-fv-green/40' : ''}`}
             >
