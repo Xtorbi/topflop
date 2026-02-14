@@ -21,6 +21,7 @@ export function resetCookieConsent() {
 
 export default function CookieBanner({ onConsentChange }) {
   const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false;
     const existing = localStorage.getItem(STORAGE_KEY);
     if (!existing) return true;
     if (isConsentExpired()) {
@@ -51,7 +52,7 @@ export default function CookieBanner({ onConsentChange }) {
     <div className="fixed bottom-0 inset-x-0 z-40 px-3 py-3 sm:p-4 bg-[#1a2340]/95 backdrop-blur-sm border-t border-white/10">
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center gap-4 text-sm text-white/80">
         <p className="flex-1 text-center sm:text-left">
-          Ce site utilise des cookies pour afficher des publicites (Google AdSense) et mesurer l'audience (Vercel Analytics).{' '}
+          Ce site utilise des cookies pour ameliorer votre experience.{' '}
           <Link to="/confidentialite" className="underline text-emerald-400 hover:text-emerald-300">
             En savoir plus
           </Link>
