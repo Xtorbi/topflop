@@ -4,6 +4,7 @@ import { fetchRanking } from '../utils/api';
 import { CLUB_NAMES, getClubDisplayName } from '../config/clubs';
 import AdBanner from '../components/AdBanner';
 import ShareWhatsApp from '../components/ShareWhatsApp';
+import useSEO from '../hooks/useSEO';
 
 const PERIODS = [
   { id: 'week', label: '7 jours' },
@@ -12,6 +13,10 @@ const PERIODS = [
 ];
 
 function Ranking() {
+  useSEO({
+    title: 'Classement Ligue 1 | Topflop',
+    description: 'Decouvre le classement des joueurs de Ligue 1 vote par la communaute. Filtre par club, poste, periode ou nationalite.',
+  });
   const [players, setPlayers] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalUniqueVoters, setTotalUniqueVoters] = useState(0);
@@ -130,10 +135,15 @@ function Ranking() {
           ))}
 
           {/* Toggle Français - iOS style */}
-          <label className="flex items-center gap-2 cursor-pointer select-none ml-auto">
-            <span className="text-sm text-white/60">Joueurs FR</span>
+          <div className="flex items-center gap-2 cursor-pointer select-none ml-auto">
+            <span id="fr-toggle-label" className="text-sm text-white/80">Joueurs FR</span>
             <div
+              role="switch"
+              aria-checked={frenchOnly}
+              aria-labelledby="fr-toggle-label"
+              tabIndex={0}
               onClick={() => setFrenchOnly(!frenchOnly)}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setFrenchOnly(!frenchOnly); } }}
               className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
                 frenchOnly ? 'bg-fv-green' : 'bg-white/20'
               }`}
@@ -144,7 +154,7 @@ function Ranking() {
                 }`}
               />
             </div>
-          </label>
+          </div>
         </div>
       </div>
 

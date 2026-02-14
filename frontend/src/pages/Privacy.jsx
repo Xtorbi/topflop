@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 function Privacy() {
+  useSEO({
+    title: 'Politique de confidentialite | Topflop',
+    description: 'Politique de confidentialite de Topflop : donnees collectees, cookies, sous-traitants, droits RGPD.',
+  });
   return (
     <section className="min-h-screen bg-vibes pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-3xl">
@@ -117,10 +122,20 @@ function Privacy() {
                     <td className="py-2">Base de donnees</td>
                     <td className="py-2">Irlande (EU West)</td>
                   </tr>
-                  <tr>
+                  <tr className="border-b border-white/10">
                     <td className="py-2">Google LLC</td>
                     <td className="py-2">AdSense (publicites)</td>
                     <td className="py-2">USA (EU-US DPF)</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="py-2">Google Fonts</td>
+                    <td className="py-2">Polices de caracteres (Inter, Bebas Neue)</td>
+                    <td className="py-2">USA (CDN, pas de cookies)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2">flagcdn.com</td>
+                    <td className="py-2">Drapeaux des nationalites (images)</td>
+                    <td className="py-2">CDN public (pas de cookies)</td>
                   </tr>
                 </tbody>
               </table>

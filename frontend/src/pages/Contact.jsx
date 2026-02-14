@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 function Contact() {
+  useSEO({
+    title: 'Contact | Topflop',
+    description: 'Contacte Topflop pour toute question, signaler un bug ou exercer tes droits RGPD.',
+  });
   const email = 'contact@topflop.fr';
 
   const subjects = [

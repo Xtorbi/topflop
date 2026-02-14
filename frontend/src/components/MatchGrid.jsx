@@ -57,7 +57,7 @@ function MatchGrid() {
         setMatches(data.matches || []);
         setMatchday(data.matchday);
       })
-      .catch(err => console.warn('MatchGrid: fetch failed', err))
+      .catch(err => console.error('[MatchGrid] fetch failed', err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -78,7 +78,31 @@ function MatchGrid() {
     };
   }, [matches]);
 
-  if (loading || matches.length === 0) return null;
+  if (!loading && matches.length === 0) return null;
+
+  if (loading) {
+    return (
+      <>
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-white/60 text-sm font-medium">ou vote sur un match</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+        <div className="flex gap-2 sm:gap-3 overflow-hidden pb-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="flex-shrink-0 bg-white/5 rounded-2xl px-5 py-4 min-w-[190px] animate-pulse">
+              <div className="h-3 bg-white/10 rounded w-16 mx-auto mb-3" />
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-8 h-8 bg-white/10 rounded-full" />
+                <div className="h-5 bg-white/10 rounded w-10" />
+                <div className="w-8 h-8 bg-white/10 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -113,6 +137,7 @@ function MatchGrid() {
           <button
             onClick={() => scroll(-1)}
             disabled={!canScrollLeft}
+            aria-label="Journée précédente"
             className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center
                        hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
@@ -123,6 +148,7 @@ function MatchGrid() {
           <button
             onClick={() => scroll(1)}
             disabled={!canScrollRight}
+            aria-label="Journée suivante"
             className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center
                        hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
@@ -153,17 +179,17 @@ function MatchGrid() {
             >
               {/* Date */}
               <p className={`text-[10px] text-center mb-3 uppercase tracking-wider
-                ${info.isToday ? 'text-fv-green/70' : 'text-white/40'}`}>
+                ${info.isToday ? 'text-fv-green/70' : 'text-white/60'}`}>
                 {info.dateLabel}
               </p>
 
               {/* Logos + Score/Heure */}
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-start justify-center gap-3">
                 {/* Home */}
                 <div className="flex flex-col items-center gap-1.5 w-14">
                   <img
                     src={CLUB_LOGOS[match.home_club]}
-                    alt=""
+                    alt={getShortName(match.home_club)}
                     width="32"
                     height="32"
                     className="w-8 h-8 object-contain"
@@ -174,8 +200,8 @@ function MatchGrid() {
                   </span>
                 </div>
 
-                {/* Score ou heure */}
-                <span className={`font-bold tabular-nums min-w-[40px] text-center
+                {/* Score ou heure — aligné verticalement avec les logos (h-8 = 32px) */}
+                <span className={`font-bold tabular-nums min-w-[40px] text-center h-8 flex items-center justify-center
                   ${info.isUpcoming ? 'text-white/50 text-base' : 'text-white text-lg'}`}>
                   {info.display}
                 </span>
@@ -184,7 +210,7 @@ function MatchGrid() {
                 <div className="flex flex-col items-center gap-1.5 w-14">
                   <img
                     src={CLUB_LOGOS[match.away_club]}
-                    alt=""
+                    alt={getShortName(match.away_club)}
                     width="32"
                     height="32"
                     className="w-8 h-8 object-contain"

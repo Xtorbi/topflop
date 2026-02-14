@@ -1,8 +1,19 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const { runSql, queryOne, queryAll } = require('../models/database');
 const { CURRENT_SEASON } = require('../config/clubs');
+
+// Rate limit admin routes: 10 req/min
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Too many admin requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+router.use(adminLimiter);
 
 // Clés secrètes
 const ADMIN_KEY = process.env.ADMIN_KEY;

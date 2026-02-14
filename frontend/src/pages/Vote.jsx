@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMode } from '../contexts/ModeContext';
 import PlayerCard from '../components/PlayerCard';
 import PlayerCardSkeleton from '../components/PlayerCardSkeleton';
 import VoteButtons from '../components/VoteButtons';
-import Confetti from '../components/Confetti';
-import AdInterstitial from '../components/AdInterstitial';
 import { fetchRandomPlayer, submitVote } from '../utils/api';
+import useSEO from '../hooks/useSEO';
+
+const Confetti = lazy(() => import('../components/Confetti'));
+const AdInterstitial = lazy(() => import('../components/AdInterstitial'));
 
 const MILESTONES = {
   10: '10 votes ! Tu t\'es bien échauffé.',
@@ -21,6 +23,10 @@ const MILESTONES = {
 const AD_INTERVAL = 10;
 
 function Vote() {
+  useSEO({
+    title: 'Voter pour les joueurs | Topflop',
+    description: 'Vote pour tes joueurs de Ligue 1 preferes : pouce haut, neutre ou pouce bas. Swipe ou clique pour donner ton avis.',
+  });
   const navigate = useNavigate();
   const { mode, voteCount, incrementVoteCount } = useMode();
   const [stack, setStack] = useState([]);
@@ -28,7 +34,7 @@ function Vote() {
   const [celebration, setCelebration] = useState({ trigger: 0, message: '' });
   const [exitDirection, setExitDirection] = useState(null);
   const [error, setError] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDraggingState, setIsDraggingState] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [showMilestone, setShowMilestone] = useState(false);
 
@@ -36,44 +42,88 @@ function Vote() {
   const isVotingRef = useRef(false);
   const touchStart = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
+  const milestoneRef = useRef(null);
+  const dragRef = useRef({ x: 0, y: 0 });
+  const cardRef = useRef(null);
+
+  // Focus "Continuer" button when milestone modal opens
+  useEffect(() => {
+    if (showMilestone && milestoneRef.current) {
+      milestoneRef.current.focus();
+    }
+  }, [showMilestone]);
 
   const SWIPE_THRESHOLD_X = 80;
   const SWIPE_THRESHOLD_Y = 60;
+
+  const applyDragTransform = useCallback((x, y, snap = false) => {
+    const el = cardRef.current;
+    if (!el) return;
+    if (snap) {
+      el.style.transition = 'transform 0.3s ease';
+    } else {
+      el.style.transition = 'none';
+    }
+    el.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${x * 0.1}deg)`;
+    // Update drag indicator opacity
+    const indicator = el.querySelector('[data-drag-indicator]');
+    if (indicator) {
+      const absX = Math.abs(x);
+      const absY = Math.abs(y);
+      if (x === 0 && y === 0) {
+        indicator.style.boxShadow = 'none';
+      } else if (absX > absY) {
+        const intensity = Math.min(absX / SWIPE_THRESHOLD_X, 1) * 0.6;
+        const radius = Math.min(absX * 0.4, 30);
+        indicator.style.boxShadow = x > 0
+          ? `inset 0 0 ${radius}px rgba(16, 185, 129, ${intensity})`
+          : `inset 0 0 ${radius}px rgba(239, 68, 68, ${intensity})`;
+      } else if (y > 0) {
+        const intensity = Math.min(y / SWIPE_THRESHOLD_Y, 1) * 0.4;
+        const radius = Math.min(y * 0.4, 30);
+        indicator.style.boxShadow = `inset 0 0 ${radius}px rgba(255, 255, 255, ${intensity})`;
+      } else {
+        indicator.style.boxShadow = 'none';
+      }
+    }
+  }, []);
 
   const handleTouchStart = (e) => {
     if (exitDirection) return;
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
     isDragging.current = true;
+    setIsDraggingState(true);
   };
 
   const handleTouchMove = (e) => {
     if (!isDragging.current || exitDirection) return;
     const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStart.current.x;
-    const deltaY = touch.clientY - touchStart.current.y;
-    setDragOffset({ x: deltaX, y: deltaY });
+    const x = touch.clientX - touchStart.current.x;
+    const y = touch.clientY - touchStart.current.y;
+    dragRef.current = { x, y };
+    applyDragTransform(x, y);
   };
 
   const handleTouchEnd = () => {
     if (!isDragging.current || exitDirection) return;
     isDragging.current = false;
-    const { x, y } = dragOffset;
+    setIsDraggingState(false);
+    const { x, y } = dragRef.current;
     const absX = Math.abs(x);
     const absY = Math.abs(y);
 
     // Determine dominant direction
     if (absX > absY && absX > SWIPE_THRESHOLD_X) {
-      // Horizontal swipe
-      setDragOffset({ x: 0, y: 0 });
+      dragRef.current = { x: 0, y: 0 };
       handleVote(x > 0 ? 'up' : 'down');
     } else if (absY > absX && y > SWIPE_THRESHOLD_Y) {
-      // Swipe down only (y > 0 = vers le bas)
-      setDragOffset({ x: 0, y: 0 });
+      dragRef.current = { x: 0, y: 0 };
       handleVote('neutral');
     } else {
       // Snap back
-      setDragOffset({ x: 0, y: 0 });
+      dragRef.current = { x: 0, y: 0 };
+      applyDragTransform(0, 0, true);
     }
   };
 
@@ -107,7 +157,8 @@ function Vote() {
 
     const currentPlayer = stack[0];
     const direction = voteType === 'up' ? 'right' : voteType === 'down' ? 'left' : 'down';
-    setDragOffset({ x: 0, y: 0 });
+    dragRef.current = { x: 0, y: 0 };
+    setIsDraggingState(false);
     setExitDirection(direction);
 
     // Update optimiste : on n'attend pas la réponse API
@@ -163,7 +214,13 @@ function Vote() {
   return (
     <section className={`h-dvh h-screen pt-14 pb-24 sm:pb-4 ${bgStyle} px-4 flex flex-col justify-center`}>
       {showMilestone && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center pt-20">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center pt-20"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Milestone atteint"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowMilestone(false); }}
+        >
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-6 text-center max-w-xs mx-4 animate-bounce-in shadow-material-4">
             <p className="text-2xl font-heading font-extrabold text-fv-navy">{celebration.message}</p>
             <div className="flex gap-3 mt-5 justify-center">
@@ -172,7 +229,7 @@ function Vote() {
                            hover:bg-fv-navy/10 transition-colors">
                 Classement
               </button>
-              <button onClick={() => setShowMilestone(false)}
+              <button ref={milestoneRef} onClick={() => setShowMilestone(false)}
                 className="px-5 py-2.5 rounded-full bg-fv-green text-fv-navy font-bold text-sm
                            hover:bg-fv-green-dark transition-colors">
                 Continuer
@@ -181,15 +238,17 @@ function Vote() {
           </div>
         </div>
       )}
-      <Confetti
-        trigger={celebration.trigger}
-        message={celebration.message}
-      />
-      <AdInterstitial
-        isOpen={showAd}
-        onClose={() => setShowAd(false)}
-        slot="VOTE_INTERSTITIAL_SLOT"
-      />
+      <Suspense fallback={null}>
+        <Confetti
+          trigger={celebration.trigger}
+          message={celebration.message}
+        />
+        <AdInterstitial
+          isOpen={showAd}
+          onClose={() => setShowAd(false)}
+          slot="VOTE_INTERSTITIAL_SLOT"
+        />
+      </Suspense>
       <div className="max-w-sm mx-auto w-full">
         {error ? (
           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
@@ -209,7 +268,7 @@ function Vote() {
             <div className="relative">
               {/* Carte du dessous (joueur suivant) - absolute derrière, visible seulement pendant l'exit */}
               {nextPlayer && (
-                <div className={`absolute inset-x-0 top-0 transition-opacity duration-150 ${exitDirection || (dragOffset.x !== 0 || dragOffset.y !== 0) ? 'opacity-100' : 'opacity-0'}`}>
+                <div className={`absolute inset-x-0 top-0 transition-opacity duration-150 ${exitDirection || isDraggingState ? 'opacity-100' : 'opacity-0'}`}>
                   <PlayerCard
                     key={nextPlayer.id}
                     player={nextPlayer}
@@ -220,37 +279,18 @@ function Vote() {
 
               {/* Carte du dessus (joueur actuel) - relative, maintient la taille */}
               <div
+                ref={cardRef}
                 className="relative z-10 touch-none"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                style={{
-                  transform: exitDirection
-                    ? undefined
-                    : `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${dragOffset.x * 0.1}deg)`,
-                  transition: exitDirection
-                    ? undefined
-                    : dragOffset.x === 0 && dragOffset.y === 0
-                      ? 'transform 0.3s ease'
-                      : 'none',
-                }}
               >
-                {/* Indicateur visuel de direction pendant le drag */}
-                {!exitDirection && (dragOffset.x !== 0 || dragOffset.y !== 0) && (
-                  <div
-                    className="absolute inset-0 z-20 rounded-2xl pointer-events-none"
-                    style={{
-                      boxShadow:
-                        Math.abs(dragOffset.x) > Math.abs(dragOffset.y)
-                          ? dragOffset.x > 0
-                            ? `inset 0 0 ${Math.min(Math.abs(dragOffset.x) * 0.4, 30)}px rgba(16, 185, 129, ${Math.min(Math.abs(dragOffset.x) / SWIPE_THRESHOLD_X, 1) * 0.6})`
-                            : `inset 0 0 ${Math.min(Math.abs(dragOffset.x) * 0.4, 30)}px rgba(239, 68, 68, ${Math.min(Math.abs(dragOffset.x) / SWIPE_THRESHOLD_X, 1) * 0.6})`
-                          : dragOffset.y > 0
-                            ? `inset 0 0 ${Math.min(dragOffset.y * 0.4, 30)}px rgba(255, 255, 255, ${Math.min(dragOffset.y / SWIPE_THRESHOLD_Y, 1) * 0.4})`
-                            : 'none',
-                    }}
-                  />
-                )}
+                {/* Indicateur visuel de direction pendant le drag (manipule via ref) */}
+                <div
+                  data-drag-indicator
+                  className="absolute inset-0 z-20 rounded-2xl pointer-events-none"
+                  style={{ boxShadow: 'none' }}
+                />
                 <PlayerCard
                   key={currentPlayer.id}
                   player={currentPlayer}

@@ -314,11 +314,18 @@ async function getRanking(req, res) {
     countParams.push(`%${cleanSearch}%`);
   }
 
-  if (nationality && /^[\p{L}\s'-]+$/u.test(nationality) && nationality.length <= 50) {
-    query += ` AND ${col}nationality = ?`;
-    countQuery += ` AND ${col}nationality = ?`;
-    params.push(nationality);
-    countParams.push(nationality);
+  if (nationality && /^[\p{L}\s'-]{1,50}$/u.test(nationality)) {
+    // Validate against actual DB values to prevent arbitrary text injection
+    const natRow = await queryOne(
+      'SELECT nationality FROM players WHERE nationality = ? AND source_season = ? LIMIT 1',
+      [nationality, CURRENT_SEASON]
+    );
+    if (natRow) {
+      query += ` AND ${col}nationality = ?`;
+      countQuery += ` AND ${col}nationality = ?`;
+      params.push(nationality);
+      countParams.push(nationality);
+    }
   }
 
   if (dateFrom) {

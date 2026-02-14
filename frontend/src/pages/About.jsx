@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 function About() {
+  useSEO({
+    title: 'A propos | Topflop',
+    description: "Decouvre l'histoire de Topflop, le barometre communautaire des joueurs de Ligue 1. Fonctionnement, scoring, valeurs.",
+  });
   return (
     <section className="min-h-screen bg-vibes pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-3xl">

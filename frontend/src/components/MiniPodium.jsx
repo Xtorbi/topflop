@@ -17,7 +17,7 @@ function PodiumPlayer({ player, rank }) {
   const textSize = isFirst ? 'text-sm sm:text-base' : 'text-xs sm:text-sm';
   const clubLogo = CLUB_LOGOS[player.club];
   const scoreNum = player.score || 0;
-  const scoreColor = scoreNum > 0 ? 'text-emerald-400' : scoreNum < 0 ? 'text-red-400' : 'text-white/60';
+  const scoreColor = scoreNum > 0 ? 'text-emerald-400' : scoreNum < 0 ? 'text-red-400' : 'text-white/70';
   const scorePrefix = scoreNum > 0 ? '+' : '';
 
   return (

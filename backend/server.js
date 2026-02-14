@@ -54,9 +54,16 @@ app.use('/api', playersRoutes);
 app.use('/api', votesRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check (with DB connectivity test)
+app.get('/api/health', async (req, res) => {
+  try {
+    const { queryOne } = require('./models/database');
+    await queryOne('SELECT 1');
+    res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('[HEALTH] DB check failed:', err.message);
+    res.status(503).json({ status: 'degraded', db: 'error', timestamp: new Date().toISOString() });
+  }
 });
 
 // Keep-alive : empêche Render free tier de s'endormir
@@ -69,11 +76,17 @@ if (RENDER_URL) {
 }
 
 // Cron interne : mise à jour matchs ven/sam/dim à 19h et 23h (Europe/Paris)
+let cronRunning = false;
 cron.schedule('0 19,23 * * 5,6,0', () => {
+  if (cronRunning) {
+    console.log(`[CRON] Skipped — previous run still in progress`);
+    return;
+  }
+  cronRunning = true;
   console.log(`[CRON] Auto update-matches at ${new Date().toISOString()}`);
-  updateMatches().catch(err => {
-    console.error(`[CRON] Auto update-matches failed:`, err.message);
-  });
+  updateMatches()
+    .catch(err => console.error(`[CRON] Auto update-matches failed:`, err.message))
+    .finally(() => { cronRunning = false; });
 }, { timezone: 'Europe/Paris' });
 
 // Error handler global (catch-all)

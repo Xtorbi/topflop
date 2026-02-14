@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 function Terms() {
+  useSEO({
+    title: 'CGU | Topflop',
+    description: "Conditions generales d'utilisation de Topflop : regles, votes, propriete intellectuelle.",
+  });
   return (
     <section className="min-h-screen bg-vibes pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-3xl">

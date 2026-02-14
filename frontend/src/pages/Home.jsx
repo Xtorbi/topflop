@@ -6,8 +6,13 @@ import MatchGrid from '../components/MatchGrid';
 import MiniPodium from '../components/MiniPodium';
 import AdBanner from '../components/AdBanner';
 import { fetchRanking } from '../utils/api';
+import useSEO from '../hooks/useSEO';
 
 function Home() {
+  useSEO({
+    title: 'Topflop — Le barometre des joueurs de Ligue 1',
+    description: 'Vote pour tes joueurs de Ligue 1 preferes et decouvre le classement communautaire base sur le ressenti des fans.',
+  });
   const navigate = useNavigate();
   const { setMode } = useMode();
   const [topPlayers, setTopPlayers] = useState(null);
@@ -19,7 +24,7 @@ function Home() {
           setTopPlayers(data.players);
         }
       })
-      .catch(() => {});
+      .catch(err => console.error('[Home] ranking fetch failed', err));
   }, []);
 
   const handleLigue1 = () => {
@@ -77,9 +82,22 @@ function Home() {
         </div>
 
         {/* Mini Podium Top 3 */}
-        {topPlayers && (
+        {topPlayers ? (
           <div className="mb-8">
             <MiniPodium players={topPlayers} />
+          </div>
+        ) : (
+          <div className="mb-8 bg-white/5 rounded-2xl border border-white/10 px-4 py-6 sm:px-8 sm:py-8 animate-pulse">
+            <div className="h-5 bg-white/10 rounded w-40 mx-auto mb-6" />
+            <div className="flex justify-center items-end gap-4 sm:gap-8">
+              {[2, 1, 3].map(r => (
+                <div key={r} className={`flex flex-col items-center ${r !== 1 ? 'mt-6' : ''}`}>
+                  <div className="w-6 h-6 bg-white/10 rounded-full mb-2" />
+                  <div className={`${r === 1 ? 'w-20 h-20' : 'w-16 h-16'} bg-white/10 rounded-full`} />
+                  <div className="h-3 bg-white/10 rounded w-12 mt-2" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
