@@ -159,6 +159,13 @@ function Vote() {
     const direction = voteType === 'up' ? 'right' : voteType === 'down' ? 'left' : 'down';
     dragRef.current = { x: 0, y: 0 };
     setIsDraggingState(false);
+    // Reset inline styles from drag before exit animation
+    if (cardRef.current) {
+      cardRef.current.style.transform = '';
+      cardRef.current.style.transition = '';
+      const indicator = cardRef.current.querySelector('[data-drag-indicator]');
+      if (indicator) indicator.style.boxShadow = 'none';
+    }
     setExitDirection(direction);
 
     // Update optimiste : on n'attend pas la réponse API
@@ -184,6 +191,11 @@ function Vote() {
     setTimeout(() => {
       isVotingRef.current = false;
       setExitDirection(null);
+      // Reset inline styles for incoming card
+      if (cardRef.current) {
+        cardRef.current.style.transform = '';
+        cardRef.current.style.transition = '';
+      }
       setStack(prev => prev.slice(1));
 
       // Charger le prochain joueur en arrière-plan
