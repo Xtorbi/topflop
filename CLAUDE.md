@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 13 fevrier 2026
+**Derniere mise a jour** : 14 fevrier 2026
 
 ---
 
@@ -15,6 +15,91 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 14 fevrier 2026 - Audit consolide 3 agents (22 fixes)
+
+**Audit croise par 3 agents** (securite backend, frontend UX/access/perf, RGPD/archi/DX) sur l'etat post-session 13 fevrier.
+
+**Bloc 1 — Quick wins (6 points)** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 1 | **13 fichiers morts supprimes** : 12 HTML debug + player_data_sample.json | `backend/*.html`, `.gitignore` |
+| 2 | **Alt text + aria-label** carrousel matchs | `MatchGrid.jsx` |
+| 3 | **Contraste ameliore** : toggle FR `/80`, score podium `/70`, date matchs `/60` | `Ranking.jsx`, `MiniPodium.jsx`, `MatchGrid.jsx` |
+| 4 | **console.warn → console.error**, catch vide → log erreur | `MatchGrid.jsx`, `Home.jsx` |
+
+**Bloc 2 — Accessibilite + UX (6 points)** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 5 | **Toggle Joueurs FR accessible** : `role=switch`, `aria-checked`, clavier Space/Enter | `Ranking.jsx` |
+| 6 | **Focus trap modale milestone** : focus auto "Continuer", `role=dialog`, Escape | `Vote.jsx` |
+| 7 | **Lazy load Confetti + AdInterstitial** : `React.lazy()` + `Suspense` (code-split) | `Vote.jsx` |
+| 8 | **Drag perf** : `dragOffset` state → ref + DOM direct (0 re-renders pendant swipe) | `Vote.jsx` |
+| 9 | **Skeleton loading** matchs (4 placeholders pulse) + podium | `MatchGrid.jsx`, `Home.jsx` |
+| 10 | **Healthcheck DB** : `SELECT 1` dans `/api/health`, 503 si DB down | `server.js` |
+
+**Bloc 3 — SEO (5 points)** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 11 | **Hook `useSEO`** : titre dynamique, meta description, canonical URL par page (7 pages) | `hooks/useSEO.js`, 7 pages |
+| 12 | **JSON-LD** : schemas `WebSite` + `Organization` | `index.html` |
+| 13 | **OG image PNG** : `logo.png` au lieu de `og-image.svg` | `index.html` |
+
+**Bloc 4 — RGPD (2 points)** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 14 | **Sous-traitants manquants** : Google Fonts + flagcdn.com | `Privacy.jsx` |
+| 15 | **Script purge IPs** : `UPDATE votes SET voter_ip = NULL WHERE voted_at < ?` | `scripts/purgeVoterIps.js` |
+
+**Bloc 5 — Securite backend (3 points)** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 16 | **Nationalite validee** contre valeurs DB (plus juste regex) | `playersController.js` |
+| 17 | **Rate limit admin** : 10 req/min via express-rate-limit | `admin.js` |
+| 18 | **Cron lock** : flag `cronRunning` anti-executions concurrentes | `server.js` |
+
+**Autres fixes** :
+
+| # | Fix | Fichiers |
+|---|-----|----------|
+| 19 | **Score matchs aligne** en hauteur avec logos (`items-start` + `h-8`) | `MatchGrid.jsx` |
+| 20 | **Cookie banner simplifie** : texte generique (sans mentions AdSense/Vercel) | `CookieBanner.jsx` |
+| 21 | **Marge top carte vote** : `pt-14` → `pt-20` | `Vote.jsx` |
+| 22 | **ads.txt introuvable** : regex rewrite exclut fichiers statiques du SPA catch-all | `vercel.json` |
+
+**Fichiers crees** :
+- `frontend/src/hooks/useSEO.js` : hook SEO (title, meta, canonical)
+- `backend/scripts/purgeVoterIps.js` : anonymisation IPs fin de saison
+
+**Fichiers supprimes** :
+- 12 fichiers `backend/*.html` (debug L'Equipe/Transfermarkt)
+- `backend/player_data_sample.json`
+
+**Fichiers modifies (18)** :
+- `.gitignore` : ajoute `backend/*.html`
+- `frontend/vercel.json` : regex rewrite exclut fichiers statiques
+- `frontend/index.html` : canonical, JSON-LD, og:image PNG
+- `frontend/src/hooks/useSEO.js` : nouveau hook
+- `frontend/src/components/MatchGrid.jsx` : alt text, aria-label, contraste, skeleton, score aligne
+- `frontend/src/components/MiniPodium.jsx` : contraste score
+- `frontend/src/components/CookieBanner.jsx` : texte simplifie
+- `frontend/src/pages/Home.jsx` : catch erreur, skeleton podium, useSEO
+- `frontend/src/pages/Vote.jsx` : lazy load, drag ref, focus trap, marge top, useSEO
+- `frontend/src/pages/Ranking.jsx` : toggle accessible, contraste, useSEO
+- `frontend/src/pages/Privacy.jsx` : sous-traitants, useSEO
+- `frontend/src/pages/About.jsx` : useSEO
+- `frontend/src/pages/Contact.jsx` : useSEO
+- `frontend/src/pages/Terms.jsx` : useSEO
+- `backend/server.js` : healthcheck DB, cron lock
+- `backend/controllers/playersController.js` : nationalite validee DB
+- `backend/routes/admin.js` : rate limit 10 req/min
+
+---
 
 ### Session du 13 fevrier 2026 - Fix photos podium + hover cartes matchs
 
