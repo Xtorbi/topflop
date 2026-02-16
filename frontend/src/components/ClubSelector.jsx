@@ -35,9 +35,9 @@ function ClubSelector() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full
-                   px-4 sm:px-5 py-1.5 sm:py-2
-                   font-bold text-sm sm:text-base
-                   hover:bg-white/15 transition-colors border border-white/10 cursor-pointer"
+                   px-4 sm:px-5 py-2.5
+                   font-bold text-sm
+                   hover:bg-white/15 transition-colors border border-white/10 cursor-pointer min-h-[44px]"
       >
         {isLigue1 ? (
           <span className="text-white">Toute la L1</span>
