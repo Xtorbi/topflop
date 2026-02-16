@@ -53,6 +53,18 @@ function Vote() {
     }
   }, [showMilestone]);
 
+  // Reset card styles when milestone/ad modal is dismissed
+  useEffect(() => {
+    if (!showMilestone && !showAd && cardRef.current) {
+      cardRef.current.style.transform = '';
+      cardRef.current.style.transition = '';
+      const indicator = cardRef.current.querySelector('[data-drag-indicator]');
+      if (indicator) indicator.style.boxShadow = 'none';
+      isDragging.current = false;
+      dragRef.current = { x: 0, y: 0 };
+    }
+  }, [showMilestone, showAd]);
+
   const SWIPE_THRESHOLD_X = 80;
   const SWIPE_THRESHOLD_Y = 60;
 
@@ -89,7 +101,7 @@ function Vote() {
   }, []);
 
   const handleTouchStart = (e) => {
-    if (exitDirection) return;
+    if (exitDirection || showMilestone) return;
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
     isDragging.current = true;
@@ -182,9 +194,9 @@ function Vote() {
       setShowMilestone(true);
     }
 
-    // Afficher pub tous les 10 votes
-    if (newCount % AD_INTERVAL === 0) {
-      setTimeout(() => setShowAd(true), MILESTONES[newCount] ? 1500 : 300);
+    // Afficher pub tous les 10 votes (seulement si pas de milestone)
+    if (newCount % AD_INTERVAL === 0 && !MILESTONES[newCount]) {
+      setTimeout(() => setShowAd(true), 300);
     }
 
     // Attendre la fin de l'animation de sortie (250ms)
@@ -218,7 +230,7 @@ function Vote() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [stack, exitDirection]);
+  }, [stack, exitDirection, showMilestone]);
 
   const bgStyle = 'bg-vibes';
   const currentPlayer = stack[0];
