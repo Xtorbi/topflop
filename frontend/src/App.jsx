@@ -18,7 +18,7 @@ function AppContent() {
   const location = useLocation();
   const isVotePage = location.pathname === '/vote';
   const [cookieConsent, setCookieConsent] = useState(
-    () => localStorage.getItem('fv-cookie-consent') === 'accepted'
+    () => typeof window === 'undefined' ? false : localStorage.getItem('fv-cookie-consent') === 'accepted'
   );
 
   useEffect(() => {

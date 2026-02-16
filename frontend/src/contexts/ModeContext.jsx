@@ -4,11 +4,11 @@ const ModeContext = createContext();
 
 export function ModeProvider({ children }) {
   const [mode, setMode] = useState(() => {
-    return localStorage.getItem('fv-mode') || 'ligue1';
+    return typeof window === 'undefined' ? 'ligue1' : (localStorage.getItem('fv-mode') || 'ligue1');
   });
 
   const [voteCount, setVoteCount] = useState(() => {
-    return parseInt(localStorage.getItem('fv-vote-count') || '0', 10);
+    return typeof window === 'undefined' ? 0 : parseInt(localStorage.getItem('fv-vote-count') || '0', 10);
   });
 
   useEffect(() => {

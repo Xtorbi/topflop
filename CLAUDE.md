@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 14 fevrier 2026
+**Derniere mise a jour** : 16 fevrier 2026
 
 ---
 
@@ -15,6 +15,42 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 16 fevrier 2026 - Fix swipe inoperant apres milestone
+
+**Bug** : Sur mobile, apres le milestone popup a 50 votes (ou tout milestone), le swipe devenait completement inoperant. La carte restait figee.
+
+**Root cause** : Combinaison de 4 problemes lies au flow milestone + ad au meme vote :
+1. Touch events filtraient a travers le modal fixed (pas de guard `showMilestone` dans `handleTouchStart`)
+2. Aucun cleanup des refs/styles quand le modal milestone se ferme
+3. Stale closure dans le keyboard handler (deps manquante `showMilestone`)
+4. Toggle rapide `showAd` true/false quand milestone ET ad se declenchent au meme vote (50 % 10 = 0) avec ADS_ENABLED=false
+
+**4 corrections dans Vote.jsx** :
+
+| # | Fix | Detail |
+|---|-----|--------|
+| 1 | **Guard `showMilestone` dans `handleTouchStart`** | Bloque les touch events pendant le modal |
+| 2 | **useEffect cleanup quand milestone/ad se ferme** | Reset `cardRef` styles, `isDragging`, `dragRef` |
+| 3 | **`showMilestone` ajoute aux deps keyboard handler** | Fix stale closure sur `handleVote` |
+| 4 | **Ad non declenchee si milestone actif** | `!MILESTONES[newCount]` dans la condition ad — evite toggle rapide showAd. Pas de perte : les milestones (10, 50, 100, 250, 500) sont tous des multiples de 10, les pubs se declenchent aux votes 20, 30, 40, 60... |
+
+**Fichiers modifies** :
+- `frontend/src/pages/Vote.jsx` : 4 fixes swipe post-milestone
+
+### Mercato hiver applique sur Turso prod
+
+Le script `winterTransfers.js` (cree le 11 fevrier) n'avait ete execute que sur la BDD locale. En prod (Turso), les joueurs partis restaient `archived = 0` et apparaissaient au vote (ex: O'Riley #515).
+
+**Execution** : `node -r dotenv/config scripts/winterTransfers.js` (le script ne chargeait pas dotenv, fallback silencieux sur la BDD locale sans `-r dotenv/config`)
+
+**Resultat prod** :
+- 16 joueurs archives (`archived = 1`) — departs hors L1
+- 6 transferts intra-L1 mis a jour (clubs)
+- 18 archives total (2 pre-existants), 475 joueurs actifs
+- Verifie : O'Riley #515 → `archived: 1` en prod
+
+---
 
 ### Session du 14 fevrier 2026 - Audit consolide 3 agents (22 fixes)
 

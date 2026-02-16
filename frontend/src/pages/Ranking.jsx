@@ -175,7 +175,7 @@ function Ranking() {
       {/* Stats globales */}
       {!loading && total > 0 && (
         <p className="mb-4 text-sm text-white/60 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-          {total} joueurs classés · {totalUniqueVoters} votant{totalUniqueVoters > 1 ? 's' : ''} unique{totalUniqueVoters > 1 ? 's' : ''}
+          {total} joueurs classés · {totalUniqueVoters} votant{totalUniqueVoters > 1 ? 's' : ''}
         </p>
       )}
 
