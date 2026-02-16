@@ -1,11 +1,18 @@
 {
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/ads.txt",
+      "headers": [{ "key": "Content-Type", "value": "text/plain" }]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://foot-vibes-api.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!ads\\.txt|robots\\.txt|sitemap\\.xml|favicon\\.|logo\\.|og-).*)",
       "destination": "/index.html"
     }
   ]
