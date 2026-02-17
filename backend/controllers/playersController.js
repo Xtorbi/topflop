@@ -6,6 +6,7 @@ const VALID_PERIODS = ['week', 'month'];
 const VALID_CLUBS = new Set(L1_CLUBS.map(c => c.name));
 const MAX_LIMIT = 100;
 const MAX_SEARCH_LENGTH = 50;
+const BAYESIAN_M = 10;
 
 function sanitizeInt(val, defaultVal, min = 0, max = MAX_LIMIT) {
   const n = parseInt(val, 10);
@@ -243,13 +244,31 @@ async function getRanking(req, res) {
   const col = 'p.';
 
   if (dateFrom) {
-    // Score calculé dynamiquement sur la période
+    // Compute global average ratio C for Bayesian average (period)
+    const periodGlobalRow = await queryOne(`
+      SELECT
+        SUM(CASE WHEN vote_type = 'up' THEN 1 ELSE 0 END) as ups,
+        SUM(CASE WHEN vote_type = 'down' THEN 1 ELSE 0 END) as downs
+      FROM votes WHERE voted_at >= ?
+    `, [dateFrom]);
+    const pUps = periodGlobalRow?.ups || 0;
+    const pDowns = periodGlobalRow?.downs || 0;
+    const pDirectional = pUps + pDowns;
+    let periodMTimesC = BAYESIAN_M * ((pUps - pDowns) / (pDirectional || 1));
+    if (!Number.isFinite(periodMTimesC)) periodMTimesC = 0;
+
+    const upsExpr = `COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 ELSE 0 END), 0)`;
+    const downsExpr = `COALESCE(SUM(CASE WHEN v.vote_type = 'down' THEN 1 ELSE 0 END), 0)`;
+    const bayesianExpr = `CAST((${upsExpr} - ${downsExpr} + ${periodMTimesC}) AS REAL) / (${upsExpr} + ${downsExpr} + ${BAYESIAN_M})`;
+
+    // Score Bayesian calculé dynamiquement sur la période
     query = `
       SELECT p.id, p.name, p.club, p.position, p.nationality, p.photo_url,
-        COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 WHEN v.vote_type = 'down' THEN -1 ELSE 0 END), 0) as period_score,
+        ${upsExpr} + ${downsExpr} as period_directional,
+        ${bayesianExpr} as period_bayesian,
         COUNT(v.id) as period_votes,
         COUNT(DISTINCT v.voter_ip) as unique_voters,
-        ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 WHEN v.vote_type = 'down' THEN -1 ELSE 0 END), 0) DESC) as rank
+        ROW_NUMBER() OVER (ORDER BY ${bayesianExpr} DESC) as rank
       FROM players p
       LEFT JOIN votes v ON p.id = v.player_id AND v.voted_at >= ?
       WHERE p.source_season = ?
@@ -264,19 +283,33 @@ async function getRanking(req, res) {
     params.push(dateFrom, CURRENT_SEASON);
     countParams.push(dateFrom, CURRENT_SEASON);
   } else {
-    // Score total — colonnes utiles uniquement
+    // Compute global average ratio C for Bayesian average (season)
+    const globalRow = await queryOne(`
+      SELECT SUM(upvotes - downvotes) as net, SUM(upvotes + downvotes) as directional
+      FROM players WHERE source_season = ? AND archived = 0 AND (upvotes + downvotes) >= 1
+    `, [CURRENT_SEASON]);
+    const globalNet = globalRow?.net || 0;
+    const globalDirectional = globalRow?.directional || 1;
+    let mTimesC = BAYESIAN_M * (globalNet / globalDirectional);
+    if (!Number.isFinite(mTimesC)) mTimesC = 0;
+
+    const bayesianSeasonExpr = `CAST((p.upvotes - p.downvotes + ${mTimesC}) AS REAL) / (p.upvotes + p.downvotes + ${BAYESIAN_M})`;
+
+    // Score Bayesian total
     query = `
-      SELECT p.id, p.name, p.club, p.position, p.nationality, p.photo_url, p.score, p.total_votes,
-        ROW_NUMBER() OVER (ORDER BY p.score DESC) as rank,
+      SELECT p.id, p.name, p.club, p.position, p.nationality, p.photo_url,
+        ${bayesianSeasonExpr} as score,
+        p.total_votes,
+        ROW_NUMBER() OVER (ORDER BY ${bayesianSeasonExpr} DESC) as rank,
         (SELECT COUNT(DISTINCT voter_ip) FROM votes WHERE player_id = p.id) as unique_voters
       FROM players p
       WHERE p.source_season = ?
         AND p.archived = 0
-        AND p.total_votes >= 1
+        AND (p.upvotes + p.downvotes) >= 1
     `;
     countQuery = `
       SELECT COUNT(*) as total FROM players p
-      WHERE p.source_season = ? AND p.archived = 0 AND p.total_votes >= 1
+      WHERE p.source_season = ? AND p.archived = 0 AND (p.upvotes + p.downvotes) >= 1
     `;
     params.push(CURRENT_SEASON);
     countParams.push(CURRENT_SEASON);
@@ -329,8 +362,8 @@ async function getRanking(req, res) {
   }
 
   if (dateFrom) {
-    // GROUP BY et filtre sur joueurs ayant des votes dans la période
-    query += ' GROUP BY p.id HAVING period_votes >= 1 ORDER BY period_score DESC LIMIT ? OFFSET ?';
+    // GROUP BY et filtre sur joueurs ayant des votes directionnels dans la période
+    query += ' GROUP BY p.id HAVING period_directional >= 1 ORDER BY period_bayesian DESC LIMIT ? OFFSET ?';
   } else {
     query += ' ORDER BY score DESC LIMIT ? OFFSET ?';
   }
@@ -351,7 +384,7 @@ async function getRanking(req, res) {
 
   // Pour les résultats avec période, utiliser period_score comme score
   const result = dateFrom
-    ? players.map(p => ({ ...p, score: p.period_score, total_votes: p.period_votes }))
+    ? players.map(p => ({ ...p, score: p.period_bayesian, total_votes: p.period_votes }))
     : players;
 
   res.json({ players: result, total, total_unique_voters: totalUniqueVoters });

@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 16 fevrier 2026
+**Derniere mise a jour** : 17 fevrier 2026
 
 ---
 
@@ -15,6 +15,42 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 17 fevrier 2026 - Scoring Bayesian average + affichage en %
+
+**Probleme** : Le score brut (`upvotes - downvotes`) favorisait les joueurs des gros clubs (PSG, OM) proposes plus souvent au vote par l'algo de selection. Un joueur d'Auxerre avec un excellent ratio ne pouvait jamais rivaliser en score brut.
+
+**Solution** : Bayesian average — equilibre entre ratio de votes et volume. Affichage en pourcentage.
+
+**Formule** :
+```
+bayesian = (ups - downs + m * C) / (ups + downs + m)
+```
+- `m = 10` : parametre de confiance (constante `BAYESIAN_M`)
+- `C` : ratio moyen global de tous les joueurs classes sur la periode
+- Resultat : float entre -1 et +1, affiche en % (-100% a +100%)
+- Un joueur avec peu de votes est tire vers la moyenne globale. Plus il a de votes, plus son ratio personnel domine.
+
+**Exemple** : Joueur avec 5 ups / 0 downs → +71% (pas +100%, le prior Bayesian tempere)
+
+**4 modifications** :
+
+| # | Fichier | Detail |
+|---|---------|--------|
+| 1 | **`playersController.js`** | Constante `BAYESIAN_M = 10`. Branche saison : calcul C global via `SUM(upvotes-downvotes)/SUM(upvotes+downvotes)` sur players, puis formule Bayesian en SQL. Branche periode : meme approche via table votes. `Number.isFinite()` en garde. HAVING filtre sur `period_directional >= 1` |
+| 2 | **`RankingTable.jsx`** | Score affiche en `Math.round(score * 100)%` |
+| 3 | **`MiniPodium.jsx`** | Score affiche en `Math.round(scoreNum * 100)%` |
+| 4 | **`ShareWhatsApp.jsx`** | Score WhatsApp en `Math.round(score * 100)%` |
+
+**Ce qui ne change pas** : schema DB, endpoints API, Vote.jsx, votesController.js. Le champ `score` de l'API est maintenant un float [-1, +1] au lieu d'un entier.
+
+**Fichiers modifies** :
+- `backend/controllers/playersController.js` : Bayesian scoring (saison + periode)
+- `frontend/src/components/RankingTable.jsx` : affichage %
+- `frontend/src/components/MiniPodium.jsx` : affichage %
+- `frontend/src/components/ShareWhatsApp.jsx` : affichage %
+
+---
 
 ### Session du 16 fevrier 2026 - Fix swipe inoperant apres milestone
 
@@ -1674,7 +1710,7 @@ node scripts/importTransfermarkt.js
 3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD hashee HMAC-SHA256 (200/jour) + 1 vote/joueur/IP/24h
 4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
 5. **Securite** : CORS restreint, admin key env-only (Bearer header), validation inputs, timeout fetch, helmet, rate limit global 100/min, trust proxy, asyncHandler, IP_HASH_SECRET fail-fast prod, erreurs masquees
-6. **Scores** : upvotes - downvotes (minimum 1 vote pour apparaitre au classement)
+6. **Scores** : Bayesian average `(ups - downs + m*C) / (ups + downs + m)` avec m=10, affiche en % (-100% a +100%)
 7. **BDD** : Turso (libSQL cloud) en prod, fallback fichier local en dev. Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 8. **Env vars Render** : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `IP_HASH_SECRET`, `ADMIN_KEY`, `FOOTBALL_DATA_API_KEY`, `CORS_ORIGINS`
 
@@ -1734,3 +1770,4 @@ node scripts/importTransfermarkt.js
 | 11 fev 2026 | Quick wins : hashIp partage, .env.example, body limit 10kb, font-display optional |
 | 11 fev 2026 | Perf : N+1 getContexts → GROUP BY, SELECT slim ranking, validate club/nationality |
 | 11 fev 2026 | Mercato hiver : 16 archives (departs hors L1), 6 transferts intra-L1 (481→465 joueurs) |
+| 17 fev 2026 | Scoring Bayesian average : (ups-downs+m*C)/(ups+downs+m) avec m=10, affiche en %, corrige biais exposition gros clubs |

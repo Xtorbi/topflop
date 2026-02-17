@@ -53,7 +53,7 @@ function PodiumPlayer({ player, rank }) {
 
       {/* Score */}
       <span className={`${scoreColor} text-xs sm:text-sm font-bold mt-1`}>
-        {scorePrefix}{scoreNum}
+        {scorePrefix}{Math.round(scoreNum * 100)}%
       </span>
     </div>
   );

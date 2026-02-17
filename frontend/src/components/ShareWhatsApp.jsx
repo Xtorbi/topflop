@@ -24,7 +24,7 @@ function ShareWhatsApp({ players, clubFilter, periodFilter, frenchOnly }) {
     }
 
     const lines = top5.map((p, i) =>
-      `${i + 1}. ${p.name} ${p.score > 0 ? '+' : ''}${p.score}`
+      `${i + 1}. ${p.name} ${p.score > 0 ? '+' : ''}${Math.round(p.score * 100)}%`
     );
 
     const message = `\u{1F3C6} ${title} :\n${lines.join('\n')}\n\u{1F449} www.topflop.fr/classement`;

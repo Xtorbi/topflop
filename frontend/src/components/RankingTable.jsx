@@ -391,7 +391,7 @@ function RankingTable({ players, adInterval = 0 }) {
               player.score < 0 ? 'bg-red-500/20 text-red-400' :
               'bg-white/10 text-white/40'
             }`}>
-              {player.score > 0 ? '+' : ''}{player.score}
+              {player.score > 0 ? '+' : ''}{Math.round(player.score * 100)}%
             </span>
           </td>
         </tr>
