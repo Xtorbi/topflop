@@ -4,7 +4,7 @@ const { CURRENT_SEASON, CLUB_POPULARITY, L1_CLUBS } = require('../config/clubs')
 const VALID_POSITIONS = ['Gardien', 'Defenseur', 'Milieu', 'Attaquant'];
 const VALID_PERIODS = ['week', 'month'];
 const VALID_CLUBS = new Set(L1_CLUBS.map(c => c.name));
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 500;
 const MAX_SEARCH_LENGTH = 50;
 const BAYESIAN_M = 10;
 

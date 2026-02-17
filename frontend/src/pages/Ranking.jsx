@@ -44,6 +44,7 @@ function Ranking() {
           period: periodFilter === 'season' ? undefined : periodFilter,
           nationality: frenchOnly ? 'France' : undefined,
           search: search || undefined,
+          limit: 500,
         });
         setPlayers(data.players);
         setTotal(data.total);
