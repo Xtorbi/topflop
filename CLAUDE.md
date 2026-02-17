@@ -24,20 +24,22 @@
 
 **Formule** :
 ```
-bayesian = (ups - downs + m * C) / (ups + downs + m)
+bayesian = (ups - downs) / (ups + downs + m)
 ```
 - `m = 10` : parametre de confiance (constante `BAYESIAN_M`)
-- `C` : ratio moyen global de tous les joueurs classes sur la periode
+- `C = 0` : prior neutre (un joueur sans votes tend vers 0%, pas vers la moyenne globale)
 - Resultat : float entre -1 et +1, affiche en % (-100% a +100%)
-- Un joueur avec peu de votes est tire vers la moyenne globale. Plus il a de votes, plus son ratio personnel domine.
+- Un joueur avec peu de votes est tire vers 0%. Plus il a de votes, plus son ratio personnel domine.
 
-**Exemple** : Joueur avec 5 ups / 0 downs → +71% (pas +100%, le prior Bayesian tempere)
+**Exemple** : 5 ups / 0 downs → +33%. 0 ups / 2 downs → -17%.
+
+**Note** : premiere version utilisait C = moyenne globale (+56%), mais avec peu de votes tous les joueurs apparaissaient positifs. Prior neutre (C=0) plus intuitif.
 
 **4 modifications** :
 
 | # | Fichier | Detail |
 |---|---------|--------|
-| 1 | **`playersController.js`** | Constante `BAYESIAN_M = 10`. Branche saison : calcul C global via `SUM(upvotes-downvotes)/SUM(upvotes+downvotes)` sur players, puis formule Bayesian en SQL. Branche periode : meme approche via table votes. `Number.isFinite()` en garde. HAVING filtre sur `period_directional >= 1` |
+| 1 | **`playersController.js`** | Constante `BAYESIAN_M = 10`. Prior neutre C=0 : formule simplifiee `(ups - downs) / (ups + downs + m)` en SQL. HAVING filtre sur `period_directional >= 1` |
 | 2 | **`RankingTable.jsx`** | Score affiche en `Math.round(score * 100)%` |
 | 3 | **`MiniPodium.jsx`** | Score affiche en `Math.round(scoreNum * 100)%` |
 | 4 | **`ShareWhatsApp.jsx`** | Score WhatsApp en `Math.round(score * 100)%` |
@@ -1710,7 +1712,7 @@ node scripts/importTransfermarkt.js
 3. **Anti-spam** : Rate limiting (3s) + IP tracking BDD hashee HMAC-SHA256 (200/jour) + 1 vote/joueur/IP/24h
 4. **Positions** : Gardien, Défenseur, Milieu, Attaquant (whitelist validee cote serveur)
 5. **Securite** : CORS restreint, admin key env-only (Bearer header), validation inputs, timeout fetch, helmet, rate limit global 100/min, trust proxy, asyncHandler, IP_HASH_SECRET fail-fast prod, erreurs masquees
-6. **Scores** : Bayesian average `(ups - downs + m*C) / (ups + downs + m)` avec m=10, affiche en % (-100% a +100%)
+6. **Scores** : Bayesian average `(ups - downs) / (ups + downs + m)` avec m=10, prior neutre C=0, affiche en % (-100% a +100%)
 7. **BDD** : Turso (libSQL cloud) en prod, fallback fichier local en dev. Env vars : `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 8. **Env vars Render** : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `IP_HASH_SECRET`, `ADMIN_KEY`, `FOOTBALL_DATA_API_KEY`, `CORS_ORIGINS`
 
@@ -1770,4 +1772,4 @@ node scripts/importTransfermarkt.js
 | 11 fev 2026 | Quick wins : hashIp partage, .env.example, body limit 10kb, font-display optional |
 | 11 fev 2026 | Perf : N+1 getContexts → GROUP BY, SELECT slim ranking, validate club/nationality |
 | 11 fev 2026 | Mercato hiver : 16 archives (departs hors L1), 6 transferts intra-L1 (481→465 joueurs) |
-| 17 fev 2026 | Scoring Bayesian average : (ups-downs+m*C)/(ups+downs+m) avec m=10, affiche en %, corrige biais exposition gros clubs |
+| 17 fev 2026 | Scoring Bayesian average : (ups-downs)/(ups+downs+m) prior neutre C=0, m=10, affiche en %, corrige biais exposition gros clubs |

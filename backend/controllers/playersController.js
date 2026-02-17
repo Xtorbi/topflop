@@ -244,22 +244,10 @@ async function getRanking(req, res) {
   const col = 'p.';
 
   if (dateFrom) {
-    // Compute global average ratio C for Bayesian average (period)
-    const periodGlobalRow = await queryOne(`
-      SELECT
-        SUM(CASE WHEN vote_type = 'up' THEN 1 ELSE 0 END) as ups,
-        SUM(CASE WHEN vote_type = 'down' THEN 1 ELSE 0 END) as downs
-      FROM votes WHERE voted_at >= ?
-    `, [dateFrom]);
-    const pUps = periodGlobalRow?.ups || 0;
-    const pDowns = periodGlobalRow?.downs || 0;
-    const pDirectional = pUps + pDowns;
-    let periodMTimesC = BAYESIAN_M * ((pUps - pDowns) / (pDirectional || 1));
-    if (!Number.isFinite(periodMTimesC)) periodMTimesC = 0;
-
+    // Bayesian average avec prior neutre (C=0) : (ups - downs) / (ups + downs + m)
     const upsExpr = `COALESCE(SUM(CASE WHEN v.vote_type = 'up' THEN 1 ELSE 0 END), 0)`;
     const downsExpr = `COALESCE(SUM(CASE WHEN v.vote_type = 'down' THEN 1 ELSE 0 END), 0)`;
-    const bayesianExpr = `CAST((${upsExpr} - ${downsExpr} + ${periodMTimesC}) AS REAL) / (${upsExpr} + ${downsExpr} + ${BAYESIAN_M})`;
+    const bayesianExpr = `CAST((${upsExpr} - ${downsExpr}) AS REAL) / (${upsExpr} + ${downsExpr} + ${BAYESIAN_M})`;
 
     // Score Bayesian calculé dynamiquement sur la période
     query = `
@@ -283,17 +271,8 @@ async function getRanking(req, res) {
     params.push(dateFrom, CURRENT_SEASON);
     countParams.push(dateFrom, CURRENT_SEASON);
   } else {
-    // Compute global average ratio C for Bayesian average (season)
-    const globalRow = await queryOne(`
-      SELECT SUM(upvotes - downvotes) as net, SUM(upvotes + downvotes) as directional
-      FROM players WHERE source_season = ? AND archived = 0 AND (upvotes + downvotes) >= 1
-    `, [CURRENT_SEASON]);
-    const globalNet = globalRow?.net || 0;
-    const globalDirectional = globalRow?.directional || 1;
-    let mTimesC = BAYESIAN_M * (globalNet / globalDirectional);
-    if (!Number.isFinite(mTimesC)) mTimesC = 0;
-
-    const bayesianSeasonExpr = `CAST((p.upvotes - p.downvotes + ${mTimesC}) AS REAL) / (p.upvotes + p.downvotes + ${BAYESIAN_M})`;
+    // Bayesian average avec prior neutre (C=0) : (ups - downs) / (ups + downs + m)
+    const bayesianSeasonExpr = `CAST((p.upvotes - p.downvotes) AS REAL) / (p.upvotes + p.downvotes + ${BAYESIAN_M})`;
 
     // Score Bayesian total
     query = `
