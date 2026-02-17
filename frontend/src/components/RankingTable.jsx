@@ -365,7 +365,7 @@ function RankingTable({ players, adInterval = 0 }) {
             </span>
           </td>
           <td className="py-3 px-2 sm:px-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start sm:items-center gap-2">
               {getFlag(player.nationality) && (
                 <img
                   src={getFlag(player.nationality)}
@@ -373,10 +373,13 @@ function RankingTable({ players, adInterval = 0 }) {
                   width="16"
                   height="12"
                   loading="lazy"
-                  className="w-4 h-3 object-cover"
+                  className="w-4 h-3 object-cover mt-[7px] sm:mt-0"
                 />
               )}
-              <span className="font-semibold text-white text-sm sm:text-base">{player.name}</span>
+              <div>
+                <span className="font-semibold text-white text-sm sm:text-base">{player.name}</span>
+                <span className="block sm:hidden text-xs text-white/40 mt-0.5">{player.club}</span>
+              </div>
             </div>
           </td>
           <td className="py-3 px-2 sm:px-3 text-white/50 hidden sm:table-cell">{player.club}</td>

@@ -118,7 +118,7 @@ function Ranking() {
         </div>
 
         {/* Ligne 2 mobile : période + toggle */}
-        <div className="flex items-center gap-1 sm:gap-2 sm:contents flex-wrap">
+        <div className="flex items-center gap-2 sm:contents flex-wrap">
           {/* Période */}
           {PERIODS.map((p) => (
             <button
@@ -135,7 +135,7 @@ function Ranking() {
           ))}
 
           {/* Toggle Français - iOS style */}
-          <div className="flex items-center gap-2 cursor-pointer select-none ml-auto">
+          <div className="flex items-center gap-2 cursor-pointer select-none sm:ml-auto">
             <span id="fr-toggle-label" className="text-sm text-white/80">Joueurs FR</span>
             <div
               role="switch"
