@@ -16,6 +16,25 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 17 fevrier 2026 - Classement complet (tous les joueurs)
+
+**Probleme** : Le classement n'affichait que les 50 premiers joueurs (limit par defaut cote frontend, MAX_LIMIT=100 cote backend). Les joueurs avec des scores negatifs etaient invisibles.
+
+**Solution** : `MAX_LIMIT` passe de 100 a 500 dans le backend, et `limit: 500` ajoute dans l'appel `fetchRanking()` du frontend.
+
+**Resultat** : 285 joueurs affiches, scores negatifs visibles en rouge en bas du classement.
+
+**2 modifications** :
+
+| # | Fichier | Detail |
+|---|---------|--------|
+| 1 | **`playersController.js`** | `MAX_LIMIT = 100` → `MAX_LIMIT = 500` |
+| 2 | **`Ranking.jsx`** | Ajout `limit: 500` dans l'appel `fetchRanking()` |
+
+**Ce qui ne change pas** : `api.js` (le parametre `limit` etait deja supporte), pas de pagination.
+
+---
+
 ### Session du 17 fevrier 2026 - Scoring Bayesian average + affichage en %
 
 **Probleme** : Le score brut (`upvotes - downvotes`) favorisait les joueurs des gros clubs (PSG, OM) proposes plus souvent au vote par l'algo de selection. Un joueur d'Auxerre avec un excellent ratio ne pouvait jamais rivaliser en score brut.
