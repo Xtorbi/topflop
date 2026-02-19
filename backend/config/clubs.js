@@ -21,7 +21,7 @@ const L1_CLUBS = [
   { id: 'auxerre', name: 'AJ Auxerre', shortName: 'Auxerre', tmId: 290, popularity: 10 },
   { id: 'angers', name: 'Angers SCO', shortName: 'Angers', tmId: 1420, popularity: 10 },
   { id: 'lorient', name: 'FC Lorient', shortName: 'Lorient', tmId: 1158, popularity: 20 },
-  { id: 'parisfc', name: 'Paris FC', shortName: 'Paris FC', tmId: 1032, popularity: 15 },
+  { id: 'parisfc', name: 'Paris FC', shortName: 'Paris FC', tmId: 10004, popularity: 15 },
   { id: 'metz', name: 'FC Metz', shortName: 'Metz', tmId: 347, popularity: 15 },
 ];
 

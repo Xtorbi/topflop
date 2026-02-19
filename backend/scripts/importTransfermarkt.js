@@ -42,7 +42,7 @@ const L1_CLUBS_TM = [
   { name: 'AJ Auxerre', slug: 'aj-auxerre', tmId: 290 },
   { name: 'Angers SCO', slug: 'angers-sco', tmId: 1420 },
   { name: 'FC Lorient', slug: 'fc-lorient', tmId: 1158 },
-  { name: 'Paris FC', slug: 'paris-fc', tmId: 1032 },
+  { name: 'Paris FC', slug: 'paris-fc', tmId: 10004 },
   { name: 'FC Metz', slug: 'fc-metz', tmId: 347 },
 ];
 
