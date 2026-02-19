@@ -16,6 +16,39 @@
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
 
+### Session du 19 fevrier 2026 - Script de validation des effectifs
+
+**Contexte** : Le bug Paris FC = Reading FC (tmId 1032 au lieu de 10004) est passe inapercu pendant des semaines. Les scripts existants (`checkDb.js`, `verifyData.js`) ne font que du reporting basique — aucune validation reelle.
+
+**Solution** : Nouveau script `validateSquads.js` qui detecte automatiquement les anomalies.
+
+**8 checks implementes** :
+
+| # | Check | Description |
+|---|-------|-------------|
+| 1 | **tmId sync** | Compare tmIds entre `backend/config/clubs.js` et `frontend/src/config/clubs.js` |
+| 2 | **Clubs BDD** | Verifie que chaque `players.club` correspond a un club dans `L1_CLUBS` |
+| 3 | **Effectif par club** | Flag si < 18 ou > 40 joueurs actifs |
+| 4 | **Nationalites suspectes** | WARN si > 60% de joueurs anglais/britanniques (aurait detecte Reading FC) |
+| 5 | **Joueurs sans match** | Count joueurs avec `matches_played = 0` par club |
+| 6 | **Doublons** | Detecte joueurs avec meme nom + meme club |
+| 7 | **Votes orphelins** | Votes referencant des player_id inexistants |
+| 8 | **Positions valides** | Verifie que toutes les positions sont dans la whitelist |
+
+**Exit code** : 0 si aucune ERROR, 1 sinon.
+
+**Resultat sur Turso prod** : 0 WARN, 1 ERROR (2 votes orphelins residuels du nettoyage Reading FC), 504 joueurs actifs.
+
+**Usage** : `cd backend && node -r dotenv/config scripts/validateSquads.js`
+
+**1 modification** :
+
+| # | Fichier | Detail |
+|---|---------|--------|
+| 1 | **`backend/scripts/validateSquads.js`** | Nouveau script de validation des effectifs |
+
+---
+
 ### Session du 19 fevrier 2026 - Audit effectifs + fix Paris FC (Reading FC)
 
 **Probleme** : Audit complet des 18 effectifs L1 contre Transfermarkt/Wikipedia/Footmercato. Bug critique decouvert : le `tmId` de Paris FC dans `backend/config/clubs.js` etait **1032** (Reading FC, club anglais de League One) au lieu de **10004** (Paris FC). Les 36 joueurs importes etaient ceux de Reading (Jack Marriott, Matt Ritchie, Lewis Wing...). Egalement, Lucas Chevalier etait encore associe a Lille (transfere au PSG en aout 2025, 40M).
@@ -1512,6 +1545,7 @@ Logo "TOPFLOP" ultra bold black weight condensed typography, heavy impactful let
 | updateStats.js | Cree | Mise a jour stats |
 | checkDb.js | Cree | Verification donnees |
 | verifyData.js | Cree | Validation donnees |
+| validateSquads.js | Cree | Validation effectifs (tmId sync, clubs, nationalites, doublons, orphelins) |
 | + nombreux scripts de test/scraping | Crees | Tests L'Equipe, Transfermarkt, etc. |
 
 ---
@@ -1755,6 +1789,10 @@ npm start               # API sur http://localhost:3001
 # Verification BDD
 cd backend
 node scripts/checkDb.js
+
+# Validation effectifs (detecte anomalies)
+cd backend
+node -r dotenv/config scripts/validateSquads.js
 
 # Reimport donnees Transfermarkt (si besoin)
 cd backend
