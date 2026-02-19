@@ -1,6 +1,6 @@
 # CLAUDE.md - Topflop
 
-**Derniere mise a jour** : 17 fevrier 2026
+**Derniere mise a jour** : 19 fevrier 2026
 
 ---
 
@@ -15,6 +15,47 @@
 - **Frontend** : https://www.topflop.fr (alias: frontend-xtorbis-projects.vercel.app)
 - **Backend API** : https://foot-vibes-api.onrender.com
 - **GitHub** : https://github.com/Xtorbi/topflop
+
+### Session du 19 fevrier 2026 - Audit effectifs + fix Paris FC (Reading FC)
+
+**Probleme** : Audit complet des 18 effectifs L1 contre Transfermarkt/Wikipedia/Footmercato. Bug critique decouvert : le `tmId` de Paris FC dans `backend/config/clubs.js` etait **1032** (Reading FC, club anglais de League One) au lieu de **10004** (Paris FC). Les 36 joueurs importes etaient ceux de Reading (Jack Marriott, Matt Ritchie, Lewis Wing...). Egalement, Lucas Chevalier etait encore associe a Lille (transfere au PSG en aout 2025, 40M).
+
+**Bilan de l'audit** :
+
+| Club | Statut | Detail |
+|------|--------|--------|
+| PSG | OK | 24 joueurs (Chevalier corrige manuellement avant le script) |
+| OL | OK | 27 joueurs |
+| Lille | OK | 27 joueurs |
+| Monaco | OK | 28 joueurs |
+| Nice | OK | 27 joueurs |
+| Le Havre | OK | 27 joueurs |
+| Angers | OK | 24 joueurs |
+| Auxerre | OK | 29 joueurs |
+| **Paris FC** | **CRITIQUE** | tmId 1032 (Reading FC) → 10004. 36 faux joueurs supprimes, 30 vrais ajoutes |
+| OM | Manquants | +3 : Dedic, Bennacer, Angel Gomes |
+| Rennes | Manquants | +3 : Mandanda, Nordin, Junior Ake |
+| Brest | Manquants | +2 : Amavi, Tavares |
+| Lens | Manquant | +1 : Mamadou Camara |
+| Strasbourg | Manquants | +3 : Paez, Dieme, M. Sarr |
+| Toulouse | Manquants | +9 : Schmidt, Zema, Efuele, Lahmadi, Azizi, Mchindra, Bakhouche, Wasbauer, Saka |
+| Nantes | Manquants + departs | +10, -3 archives (Ganago, Carlgren, Cabella) |
+| Metz | Manquants | +4 : Boulaya, Van Den Kerkhof, Jallow, Bouna Sarr |
+| Lorient | Manquants | +3 : Semedo, Aouchiche, Diarra |
+
+**Resultat** : 504 joueurs actifs (etait 465). 68 joueurs ajoutes, 3 archives, 36 supprimes (Reading FC) + 31 votes associes.
+
+**3 modifications** :
+
+| # | Fichier | Detail |
+|---|---------|--------|
+| 1 | **`backend/config/clubs.js`** | `tmId: 1032` → `tmId: 10004` pour Paris FC |
+| 2 | **`backend/scripts/importTransfermarkt.js`** | Meme correction tmId |
+| 3 | **`backend/scripts/fixSquads.js`** | Nouveau script : supprime Reading FC, ajoute vrais joueurs, corrige 10 clubs |
+
+**Script `fixSquads.js`** : supprime les votes FK + joueurs Paris FC, insere 30 vrais joueurs Paris FC, ajoute joueurs manquants pour OM/Rennes/Brest/Lens/Strasbourg/Toulouse/Nantes/Metz/Lorient, archive 3 departs Nantes. Execute sur Turso prod via `node -r dotenv/config scripts/fixSquads.js`.
+
+---
 
 ### Session du 17 fevrier 2026 - Classement complet (tous les joueurs)
 
