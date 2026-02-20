@@ -21,7 +21,7 @@ function PodiumPlayer({ player, rank }) {
   const scorePrefix = scoreNum > 0 ? '+' : '';
 
   return (
-    <div className={`flex flex-col items-center ${isFirst ? 'order-2' : rank === 2 ? 'order-1 mt-6 sm:mt-8' : 'order-3 mt-6 sm:mt-8'}`}>
+    <div className={`flex flex-col items-center w-1/3 max-w-[7rem] ${isFirst ? 'order-2' : rank === 2 ? 'order-1 mt-6 sm:mt-8' : 'order-3 mt-6 sm:mt-8'}`}>
       {/* Rank badge */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mb-2
         ${rank === 1 ? 'bg-emerald-500 text-white' : rank === 2 ? 'bg-emerald-500/70 text-white' : 'bg-emerald-500/40 text-white'}`}>
@@ -42,7 +42,7 @@ function PodiumPlayer({ player, rank }) {
       </div>
 
       {/* Name */}
-      <p className={`${textSize} font-bold text-white mt-2 text-center leading-tight`}>
+      <p className={`${textSize} font-bold text-white mt-2 text-center leading-tight w-full truncate`}>
         {formatShortName(player.name)}
       </p>
 
